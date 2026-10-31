@@ -28,7 +28,10 @@ pub(crate) enum Error {
     NonFinitePixelSample,
     InvalidAlphaValue,
     #[cfg(feature = "avif-read")]
-    InputPixelLimitExceeded { pixels: u64, limit: u64 },
+    InputPixelLimitExceeded {
+        pixels: u64,
+        limit: u64,
+    },
     #[cfg(feature = "avif-write")]
     InvalidEncodeOptions,
     #[cfg(feature = "avif-write")]
@@ -90,7 +93,10 @@ impl fmt::Display for Error {
             Self::EncodeFailed => write!(f, "AVIF encoder failed"),
             #[cfg(feature = "avif-read")]
             Self::InputPixelLimitExceeded { pixels, limit } => {
-                write!(f, "input has {pixels} pixels, exceeding the configured {limit} pixel limit")
+                write!(
+                    f,
+                    "input has {pixels} pixels, exceeding the configured {limit} pixel limit"
+                )
             }
             Self::InvalidAlphaValue => {
                 write!(f, "straight alpha must be finite and between zero and one")

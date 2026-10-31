@@ -181,7 +181,9 @@ fn open_source<'a>(
         ImageFormat::Avif => {
             #[cfg(feature = "avif-read")]
             {
-                Ok(Box::new(crate::codecs::avif::AvifSource::new_bounded(bytes, max_pixels)?))
+                Ok(Box::new(crate::codecs::avif::AvifSource::new_bounded(
+                    bytes, max_pixels,
+                )?))
             }
             #[cfg(not(feature = "avif-read"))]
             {
@@ -213,10 +215,14 @@ pub fn transcode(
     .validate()?;
     let target_size = Size::new(options.output_width, options.output_height)?;
     if options.max_input_bytes == 0 || options.max_input_pixels == 0 {
-        return Err(ProcessingError::new("input byte/pixel limits must be nonzero"));
+        return Err(ProcessingError::new(
+            "input byte/pixel limits must be nonzero",
+        ));
     }
     if encoded.len() > options.max_input_bytes {
-        return Err(ProcessingError::new("compressed image exceeds max_input_bytes"));
+        return Err(ProcessingError::new(
+            "compressed image exceeds max_input_bytes",
+        ));
     }
     let source = open_source(encoded, format, options.max_input_pixels)?;
     let dimensions = source.info().size;

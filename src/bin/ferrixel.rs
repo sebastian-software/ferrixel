@@ -68,12 +68,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             option if option.starts_with("--max-input-mb=") => {
                 let megabytes: usize = option[15..].parse()?;
-                options.max_input_bytes = megabytes.checked_mul(1024 * 1024)
+                options.max_input_bytes = megabytes
+                    .checked_mul(1024 * 1024)
                     .ok_or("compressed input limit overflow")?;
             }
             option if option.starts_with("--max-input-mpx=") => {
                 let megapixels: u64 = option[16..].parse()?;
-                options.max_input_pixels = megapixels.checked_mul(1_000_000)
+                options.max_input_pixels = megapixels
+                    .checked_mul(1_000_000)
                     .ok_or("decoded pixel limit overflow")?;
             }
             option if option.starts_with("--crop=") => {

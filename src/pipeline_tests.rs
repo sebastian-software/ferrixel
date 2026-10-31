@@ -94,16 +94,37 @@ fn compressed_bytes_and_decoded_pixel_caps_reject_before_processing() {
         speed: 10,
         ..TransformOptions::default()
     };
-    assert!(transcode(
-        jpeg, ImageFormat::Jpeg,
-        TransformOptions { max_input_bytes: 1, ..options },
-    ).is_err());
-    assert!(transcode(
-        jpeg, ImageFormat::Jpeg,
-        TransformOptions { max_input_pixels: 1, ..options },
-    ).is_err());
-    assert!(transcode(
-        jpeg, ImageFormat::Jpeg,
-        TransformOptions { max_input_pixels: 0, ..options },
-    ).is_err());
+    assert!(
+        transcode(
+            jpeg,
+            ImageFormat::Jpeg,
+            TransformOptions {
+                max_input_bytes: 1,
+                ..options
+            },
+        )
+        .is_err()
+    );
+    assert!(
+        transcode(
+            jpeg,
+            ImageFormat::Jpeg,
+            TransformOptions {
+                max_input_pixels: 1,
+                ..options
+            },
+        )
+        .is_err()
+    );
+    assert!(
+        transcode(
+            jpeg,
+            ImageFormat::Jpeg,
+            TransformOptions {
+                max_input_pixels: 0,
+                ..options
+            },
+        )
+        .is_err()
+    );
 }

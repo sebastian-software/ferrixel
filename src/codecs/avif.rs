@@ -26,9 +26,11 @@ impl AvifSource {
     /// parsing and decoding can still allocate opaque codec memory.
     pub(crate) fn new_bounded(bytes: &[u8], max_pixels: u64) -> Result<Self, Error> {
         let mut reader = bytes;
-        let parsed = avif_parse::AvifData::from_reader(&mut reader)
+        let parsed =
+            avif_parse::AvifData::from_reader(&mut reader).map_err(|_| Error::DecodeFailed)?;
+        let metadata = parsed
+            .primary_item_metadata()
             .map_err(|_| Error::DecodeFailed)?;
-        let metadata = parsed.primary_item_metadata().map_err(|_| Error::DecodeFailed)?;
         let coded_pixels = u64::from(metadata.max_frame_width.get())
             .checked_mul(u64::from(metadata.max_frame_height.get()))
             .ok_or(Error::GeometryOverflow)?;
