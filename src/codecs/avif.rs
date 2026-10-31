@@ -29,6 +29,8 @@ impl AvifSource {
         let (width, height, layout) = match &image {
             Image::Rgb8(frame) => (frame.width(), frame.height(), ChannelLayout::Rgb),
             Image::Rgba8(frame) => (frame.width(), frame.height(), ChannelLayout::Rgba),
+            Image::Rgb16(frame) => (frame.width(), frame.height(), ChannelLayout::Rgb),
+            Image::Rgba16(frame) => (frame.width(), frame.height(), ChannelLayout::Rgba),
             _ => return Err(Error::UnsupportedCodecLayout),
         };
         let size = Size::new(
@@ -38,7 +40,11 @@ impl AvifSource {
         let info = DecoderInfo {
             size,
             layout,
-            sample: SampleType::U8,
+            sample: if matches!(image, Image::Rgb16(_) | Image::Rgba16(_)) {
+                SampleType::F32
+            } else {
+                SampleType::U8
+            },
             alpha: if layout == ChannelLayout::Rgba {
                 // avif-decode unpremultiplies images signaled as premultiplied.
                 AlphaMode::Straight
@@ -70,27 +76,67 @@ impl DecodeSource for AvifSource {
         }
         let channels = usize::from(self.info.layout.channels());
         let width = usize::try_from(region.width).map_err(|_| Error::GeometryOverflow)?;
-        let mut scratch =
-            budget.allocate(width.checked_mul(channels).ok_or(Error::GeometryOverflow)?)?;
+        let components = width.checked_mul(channels).ok_or(Error::GeometryOverflow)?;
+        let mut scratch_u8 = if self.info.sample == SampleType::U8 {
+            Some(budget.allocate(components)?)
+        } else {
+            None
+        };
+        let mut scratch_f32 = if self.info.sample == SampleType::F32 {
+            Some(budget.allocate_typed::<f32>(components)?)
+        } else {
+            None
+        };
         let left = usize::try_from(region.x).map_err(|_| Error::GeometryOverflow)?;
         for y in region.y..region.bottom() {
             let row_index = usize::try_from(y).map_err(|_| Error::GeometryOverflow)?;
             match &self.image {
                 Image::Rgb8(frame) => {
                     let pixels = &frame[row_index][left..left + width];
+                    let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
                     for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(3).zip(pixels) {
                         dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b]);
                     }
                 }
                 Image::Rgba8(frame) => {
                     let pixels = &frame[row_index][left..left + width];
+                    let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
                     for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(4).zip(pixels) {
                         dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b, pixel.a]);
                     }
                 }
+                Image::Rgb16(frame) => {
+                    let pixels = &frame[row_index][left..left + width];
+                    let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
+                    for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(3).zip(pixels) {
+                        dst.copy_from_slice(&[
+                            f32::from(pixel.r) / 65_535.0,
+                            f32::from(pixel.g) / 65_535.0,
+                            f32::from(pixel.b) / 65_535.0,
+                        ]);
+                    }
+                }
+                Image::Rgba16(frame) => {
+                    let pixels = &frame[row_index][left..left + width];
+                    let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
+                    for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(4).zip(pixels) {
+                        dst.copy_from_slice(&[
+                            f32::from(pixel.r) / 65_535.0,
+                            f32::from(pixel.g) / 65_535.0,
+                            f32::from(pixel.b) / 65_535.0,
+                            f32::from(pixel.a) / 65_535.0,
+                        ]);
+                    }
+                }
                 _ => return Err(Error::UnsupportedCodecLayout),
             }
-            sink(y, DecodedRow::U8(scratch.as_slice()))?;
+            if let Some(scratch) = &scratch_u8 {
+                sink(y, DecodedRow::U8(scratch.as_slice()))?;
+            } else if let Some(scratch) = &scratch_f32 {
+                sink(y, DecodedRow::F32(scratch.as_slice()))?;
+            } else {
+                return Err(Error::UnsupportedCodecLayout);
+            }
         }
         Ok(DecodeReport {
             requested: region,
@@ -98,7 +144,8 @@ impl DecodeSource for AvifSource {
             rows: u64::from(region.height),
             output_sample_bytes: u64::from(region.width)
                 * u64::from(region.height)
-                * channels as u64,
+                * channels as u64
+                * if self.info.sample == SampleType::F32 { 4 } else { 1 },
             known_full_frame_buffers: 1,
             peak_engine_managed_bytes: budget.snapshot().peak,
             opaque_codec_memory_unbounded: true,
