@@ -31,6 +31,9 @@ pub(crate) enum NodeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ResizeDomain {
     EncodedSamples,
+    /// Reference bilinear filtering in linear sRGB, with straight-alpha
+    /// inputs premultiplied *after* transfer decoding and before filtering.
+    LinearSrgb,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -146,6 +149,37 @@ impl Graph {
             kind: NodeKind::Resize {
                 input,
                 domain: ResizeDomain::EncodedSamples,
+            },
+            size,
+            format: parent.format,
+            semantics: parent.semantics.clone(),
+        }))
+    }
+
+    /// Opt-in linear-light sRGB resize. No implicit color guessing or ICC
+    /// parsing: a nonconflicting, explicitly tagged full-range RGB sRGB
+    /// source and established alpha association are required.
+    pub(crate) fn resize_linear_srgb(
+        &mut self,
+        input: NodeId,
+        size: Size,
+    ) -> Result<NodeId, Error> {
+        let parent = self.node(input)?;
+        let expected_alpha = match parent.format {
+            PixelFormat::InterleavedU8(3) => AlphaMode::Opaque,
+            PixelFormat::InterleavedU8(4) => AlphaMode::Straight,
+            _ => return Err(Error::UnsupportedPixelOperation),
+        };
+        if parent.semantics.alpha != expected_alpha {
+            return Err(Error::UnsupportedAlphaMode);
+        }
+        if !parent.semantics.color.is_unambiguous_srgb() {
+            return Err(Error::UnsupportedColorEncoding);
+        }
+        Ok(self.push(Node {
+            kind: NodeKind::Resize {
+                input,
+                domain: ResizeDomain::LinearSrgb,
             },
             size,
             format: parent.format,

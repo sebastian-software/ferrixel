@@ -52,21 +52,17 @@ pub(crate) struct DecoderInfo {
     pub layout: ChannelLayout,
     pub sample: SampleType,
     pub access: DecodeAccess,
+    /// Alpha association of emitted samples, not of the encoded bitstream.
+    pub alpha: AlphaMode,
     /// Describes *emitted* samples. None means unknown, not assumed sRGB.
     pub rendered_icc: Option<Vec<u8>>,
     pub rendered_cicp: Option<[u8; 4]>,
 }
 impl DecoderInfo {
     pub(crate) fn semantics(&self) -> ImageSemantics {
-        let alpha = match self.layout {
-            ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
-            ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
-                AlphaMode::Unspecified
-            }
-        };
         ImageSemantics {
             color: ColorEncoding::from_metadata(self.rendered_icc.as_deref(), self.rendered_cicp),
-            alpha,
+            alpha: self.alpha,
         }
     }
 

@@ -1,6 +1,7 @@
 //! JPEG XL adapter: codec-level ROI request, float output scanlines.
 //! ROI is a capability, not a guarantee of skipped internal codec work.
 use jxl_oxide::{CropInfo, JxlImage, PixelFormat};
+use crate::color::AlphaMode;
 use std::io::Cursor;
 
 use crate::decoder::{
@@ -33,6 +34,10 @@ impl JxlSource {
             layout,
             sample: SampleType::F32,
             access: DecodeAccess::CodecRegionRequest,
+            alpha: match layout {
+                ChannelLayout::Graya | ChannelLayout::Rgba | ChannelLayout::Cmyka => AlphaMode::Unspecified,
+                ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
+            },
             rendered_icc: Some(image.rendered_icc()),
             rendered_cicp: image.rendered_cicp(),
         };

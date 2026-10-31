@@ -19,6 +19,7 @@ mod error;
 mod execute;
 mod geometry;
 mod graph;
+mod linear_srgb;
 mod memory;
 mod plan;
 mod planar;
