@@ -57,6 +57,16 @@ impl MemoryBudget {
     }
 
     pub(crate) fn allocate(&self, bytes: usize) -> Result<ManagedBytes, Error> {
+        self.allocate_typed(bytes)
+    }
+
+    /// Account for typed row storage (e.g. f32) as well as bytes.
+    pub(crate) fn allocate_typed<T: Default + Clone>(
+        &self,
+        elements: usize,
+    ) -> Result<ManagedBuffer<T>, Error> {
+        let bytes = elements.checked_mul(std::mem::size_of::<T>())
+            .ok_or(Error::GeometryOverflow)?;
         let mut live = self.state.live.load(Ordering::Acquire);
         loop {
             let available = self.state.limit.saturating_sub(live);
@@ -89,14 +99,14 @@ impl MemoryBudget {
             bytes,
         };
         let mut data = Vec::new();
-        data.try_reserve_exact(bytes)
+        data.try_reserve_exact(elements)
             .map_err(|_| Error::AllocationFailed)?;
-        data.resize(bytes, 0);
+        data.resize(elements, T::default());
         self.state.allocations.fetch_add(1, Ordering::Relaxed);
         self.state
             .allocated_bytes
             .fetch_add(bytes, Ordering::Relaxed);
-        Ok(ManagedBytes { data, reservation })
+        Ok(ManagedBuffer { data, reservation })
     }
 }
 
@@ -112,24 +122,26 @@ impl Drop for Reservation {
     }
 }
 
-pub(crate) struct ManagedBytes {
+pub(crate) type ManagedBytes = ManagedBuffer<u8>;
+
+pub(crate) struct ManagedBuffer<T> {
     // Released before `reservation` (field drop order) to avoid prematurely
     // advertising available memory while the allocation is still live.
-    data: Vec<u8>,
+    data: Vec<T>,
     reservation: Reservation,
 }
 
-impl ManagedBytes {
-    pub(crate) fn as_slice(&self) -> &[u8] {
+impl<T> ManagedBuffer<T> {
+    pub(crate) fn as_slice(&self) -> &[T] {
         &self.data
     }
 
-    pub(crate) fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub(crate) fn as_mut_slice(&mut self) -> &mut [T] {
         &mut self.data
     }
 }
 
-impl std::fmt::Debug for ManagedBytes {
+impl<T> std::fmt::Debug for ManagedBuffer<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ManagedBytes")
             .field("len", &self.data.len())

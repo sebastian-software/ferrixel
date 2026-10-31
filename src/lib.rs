@@ -1,8 +1,8 @@
 //! Ferrixel — an experimental, pipeline-first image processing engine.
 //!
-//! This crate currently implements only an **internal** codec-free vertical
-//! slice, used to validate region dependencies, ownership and a bounded CPU
-//! pixel-buffer model. There is intentionally no stable public processing API.
+//! Ferrixel currently contains a private experimental pipeline and optional
+//! read-only JPEG/JPEG XL decoders for validating codec capability contracts,
+//! region planning, and bounded engine-managed memory. There is intentionally no stable public processing API.
 //!
 //! See `docs/architecture.md` and `docs/adr/` in the repository.
 
@@ -11,6 +11,8 @@
 // public API. Remove this allowance when the first supported API lands.
 #![cfg_attr(not(test), allow(dead_code))]
 
+mod codecs;
+mod decoder;
 mod error;
 mod execute;
 mod geometry;
@@ -25,3 +27,6 @@ mod tests;
 
 #[cfg(test)]
 mod planar_tests;
+
+#[cfg(test)]
+mod decoder_tests;

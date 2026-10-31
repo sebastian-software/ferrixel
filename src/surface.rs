@@ -55,6 +55,8 @@ pub(crate) struct ColorMetadata {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PixelFormat {
     Gray8,
+    InterleavedU8(u8),
+    InterleavedF32(u8),
     /// 4:2:0 planar YCbCr; each sample is a LE u16 containing 10 valid bits.
     Yuv420P10(ColorMetadata),
 }
