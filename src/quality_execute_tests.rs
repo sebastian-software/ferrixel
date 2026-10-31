@@ -316,13 +316,13 @@ fn deterministic_resampler_property_matrix_preserves_flat_srgb() {
                 .take(width * height * 3)
                 .collect();
             let mut source = RgbSource::new(
-                Size::new(width as u32, height as u32).unwrap(),
+                Size::new(u32::try_from(width).unwrap(), u32::try_from(height).unwrap()).unwrap(),
                 ChannelLayout::Rgb,
                 image,
             );
             let (graph, input, output) = make_graph(
                 &source,
-                Size::new(new_width as u32, new_height as u32).unwrap(),
+                Size::new(u32::try_from(new_width).unwrap(), u32::try_from(new_height).unwrap()).unwrap(),
                 filter,
             );
             let budget = MemoryBudget::new(65_536);
@@ -332,7 +332,7 @@ fn deterministic_resampler_property_matrix_preserves_flat_srgb() {
                 output,
                 input,
                 &mut source,
-                Rect::new(0, 0, new_width as u32, new_height as u32).unwrap(),
+                Rect::new(0, 0, u32::try_from(new_width).unwrap(), u32::try_from(new_height).unwrap()).unwrap(),
                 &budget,
                 |_, row| {
                     delivered += 1;
@@ -346,7 +346,7 @@ fn deterministic_resampler_property_matrix_preserves_flat_srgb() {
                 },
             )
             .unwrap();
-            assert_eq!(delivered, new_height as u32);
+            assert_eq!(delivered, u32::try_from(new_height).unwrap());
             assert_eq!(source.calls, 1);
             assert_eq!(report.output_rows, u64::from(delivered));
             assert_eq!(budget.snapshot().live, 0);
