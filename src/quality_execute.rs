@@ -78,9 +78,10 @@ fn prepare(
             NodeKind::ToLinearSrgb { .. } if !linearized && resized.is_none() => {
                 linearized = true;
             }
-            NodeKind::Resize { domain: ResizeDomain::WorkingLinear(filter), .. }
-                if linearized && resized.is_none() =>
-            {
+            NodeKind::Resize {
+                domain: ResizeDomain::WorkingLinear(filter),
+                ..
+            } if linearized && resized.is_none() => {
                 resized = Some((index, filter));
             }
             NodeKind::ToSrgb8 { .. } if resized.is_some() && !quantized => {
@@ -123,8 +124,7 @@ fn sample_rgba(
     };
     let rgb = [component(0), component(1), component(2)];
     if channels == 4 {
-        let premultiplied =
-            decode_straight_to_premultiplied_linear_srgb(color, rgb, component(3))?;
+        let premultiplied = decode_straight_to_premultiplied_linear_srgb(color, rgb, component(3))?;
         Ok([
             premultiplied.rgb[0],
             premultiplied.rgb[1],
@@ -178,19 +178,32 @@ pub(crate) fn execute_quality_srgb8(
     let output_width = usize::try_from(requested.width).map_err(|_| Error::GeometryOverflow)?;
     let width_components = output_width.checked_mul(4).ok_or(Error::GeometryOverflow)?;
     let source_width = usize::try_from(plan.source.width).map_err(|_| Error::GeometryOverflow)?;
-    let source_components = source_width.checked_mul(channels).ok_or(Error::GeometryOverflow)?;
+    let source_components = source_width
+        .checked_mul(channels)
+        .ok_or(Error::GeometryOverflow)?;
 
     let mut columns = Vec::new();
     for offset in 0..requested.width {
-        let x = plan.resize.x.checked_add(offset).ok_or(Error::GeometryOverflow)?;
+        let x = plan
+            .resize
+            .x
+            .checked_add(offset)
+            .ok_or(Error::GeometryOverflow)?;
         columns.push(taps(plan.input.width, plan.output.width, x, plan.filter)?);
     }
     let mut lines = Vec::new();
     for offset in 0..requested.height {
-        let y = plan.resize.y.checked_add(offset).ok_or(Error::GeometryOverflow)?;
+        let y = plan
+            .resize
+            .y
+            .checked_add(offset)
+            .ok_or(Error::GeometryOverflow)?;
         lines.push(taps(plan.input.height, plan.output.height, y, plan.filter)?);
     }
-    let mut needed: Vec<u32> = lines.iter().flat_map(|row| row.iter().map(|tap| tap.index)).collect();
+    let mut needed: Vec<u32> = lines
+        .iter()
+        .flat_map(|row| row.iter().map(|tap| tap.index))
+        .collect();
     needed.sort_unstable();
     needed.dedup();
 
@@ -200,7 +213,8 @@ pub(crate) fn execute_quality_srgb8(
     let mut decoded_rows = 0_u32;
     let mut expected_y = plan.source.y;
     let report = source.read_region(plan.source, budget, &mut |decoder_y, row| {
-        if decoder_y != expected_y || row.len() != source_components
+        if decoder_y != expected_y
+            || row.len() != source_components
             || row.sample_type() != info.sample
         {
             return Err(Error::IncompleteDecoderOutput);
@@ -216,7 +230,9 @@ pub(crate) fn execute_quality_srgb8(
             for (col, weights) in columns.iter().enumerate() {
                 for tap in weights {
                     let source_x = usize::try_from(
-                        tap.index.checked_sub(plan.footprint.x).ok_or(Error::OutOfBounds)?,
+                        tap.index
+                            .checked_sub(plan.footprint.x)
+                            .ok_or(Error::OutOfBounds)?,
                     )
                     .map_err(|_| Error::GeometryOverflow)?;
                     let pixel = sample_rgba(row, source_x, channels, &info.semantics().color)?;
@@ -232,13 +248,16 @@ pub(crate) fn execute_quality_srgb8(
         }
 
         while output_rows < lines.len()
-            && lines[output_rows].last().is_some_and(|tap| tap.index <= semantic_y)
+            && lines[output_rows]
+                .last()
+                .is_some_and(|tap| tap.index <= semantic_y)
         {
             let taps_y = &lines[output_rows];
             for col in 0..output_width {
                 let mut acc = [0.0_f64; 4];
                 for tap in taps_y {
-                    let data = cache.iter()
+                    let data = cache
+                        .iter()
                         .find(|row| row.y == tap.index)
                         .ok_or(Error::IncompleteDecoderOutput)?;
                     for channel in 0..4 {
@@ -248,7 +267,8 @@ pub(crate) fn execute_quality_srgb8(
                 let pixel = final_rgba(acc, info.layout == ChannelLayout::Rgb)?;
                 output.as_mut_slice()[col * 4..col * 4 + 4].copy_from_slice(&pixel);
             }
-            let out_y = requested.y + u32::try_from(output_rows).map_err(|_| Error::GeometryOverflow)?;
+            let out_y =
+                requested.y + u32::try_from(output_rows).map_err(|_| Error::GeometryOverflow)?;
             sink(out_y, output.as_slice())?;
             output_rows += 1;
             if let Some(next) = lines.get(output_rows).and_then(|line| line.first()) {
@@ -262,7 +282,8 @@ pub(crate) fn execute_quality_srgb8(
         Ok(())
     })?;
 
-    if decoded_rows != plan.source.height || output_rows != lines.len()
+    if decoded_rows != plan.source.height
+        || output_rows != lines.len()
         || report.rows != u64::from(decoded_rows)
     {
         return Err(Error::IncompleteDecoderOutput);
