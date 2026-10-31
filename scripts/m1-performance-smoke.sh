@@ -75,6 +75,21 @@ for iteration in 1 2; do
         printf 'libvips-png-resize-only,%s,%s,%s,%s,no\n' \
             "$iteration" "$elapsed" "$rss" "$bytes" >> "$csv"
     fi
+
+    if [[ -n "${M1_SHARP_NODE_MODULES:-}" ]] \
+        && NODE_PATH="$M1_SHARP_NODE_MODULES" \
+            /usr/bin/time -f '%e,%M' -o "$tmp/sharp-time" \
+            node "$repo_dir/scripts/m1-sharp-smoke.cjs" \
+                "$tmp/source.jpg" "$tmp/sharp.avif" \
+                > "$tmp/sharp-log" 2>&1; then
+        IFS=, read -r elapsed rss < "$tmp/sharp-time"
+        bytes=$(wc -c < "$tmp/sharp.avif" | tr -d ' ')
+        printf 'sharp-avif,%s,%s,%s,%s,no\n' "$iteration" "$elapsed" "$rss" "$bytes" >> "$csv"
+    else
+        printf 'sharp-avif,%s,,,,no\n' "$iteration" >> "$csv"
+        echo "Sharp AVIF smoke unavailable (see logs); NOT a parity claim" >&2
+        if [[ -f "$tmp/sharp-log" ]]; then cat "$tmp/sharp-log" >&2; fi
+    fi
 done
 
 echo "M1 smoke results (not fair equal-quality performance claims):"

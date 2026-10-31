@@ -22,7 +22,14 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y nasm libvips-tools time
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned Sharp for a non-parity AVIF comparison
+        run: npm install --prefix "$RUNNER_TEMP/m1-sharp" --no-audit --no-fund sharp@0.34.5
       - name: Generate a fixed synthetic JPEG and measure end-to-end RSS/time
+        env:
+          M1_SHARP_NODE_MODULES: ${{ runner.temp }}/m1-sharp/node_modules
         run: bash scripts/m1-performance-smoke.sh
       - name: Attach smoke metrics and environment
         if: always()
