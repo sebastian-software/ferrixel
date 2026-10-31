@@ -279,7 +279,7 @@ fn missing_or_conflicting_profile_and_hdr_transfers_fail_closed() {
             Err(Error::UnsupportedColorEncoding)
         );
     }
-    assert!(source.regions.is_empty());
+    assert_eq!(source.regions, Vec::<Rect>::new());
 }
 
 #[test]
@@ -388,7 +388,7 @@ fn cancellation_and_budgets_release_all_managed_buffers() {
         Err(Error::BudgetExceeded { .. })
     ));
     assert_eq!(too_small.snapshot().live, 0);
-    assert!(source.regions.is_empty());
+    assert_eq!(source.regions, Vec::<Rect>::new());
 
     let budget = MemoryBudget::new(12);
     let mut called = 0;

@@ -53,7 +53,7 @@ pub(crate) struct ColorMetadata {
 }
 
 /// Meaningful channel order; sample count alone cannot distinguish RGBA
-/// from CMYK (or GrayAlpha from unrelated two-plane semantics).
+/// from CMYK (or `GrayAlpha` from unrelated two-plane semantics).
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ChannelLayout {
