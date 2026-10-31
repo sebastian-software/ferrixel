@@ -70,81 +70,81 @@ fn emit_decoded_rows(
     scratch_f32: &mut Option<crate::memory::ManagedBuffer<f32>>,
     sink: &mut dyn FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
 ) -> Result<(), Error> {
-        let left = usize::try_from(region.x).map_err(|_| Error::GeometryOverflow)?;
-        for y in region.y..region.bottom() {
-            let row_index = usize::try_from(y).map_err(|_| Error::GeometryOverflow)?;
-            match image {
-                Image::Rgb8(frame) => {
-                    let pixels = &frame[row_index][left..left + width];
-                    let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch
-                        .as_mut_slice()
-                        .as_chunks_mut::<3>()
-                        .0
-                        .iter_mut()
-                        .zip(pixels)
-                    {
-                        dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b]);
-                    }
+    let left = usize::try_from(region.x).map_err(|_| Error::GeometryOverflow)?;
+    for y in region.y..region.bottom() {
+        let row_index = usize::try_from(y).map_err(|_| Error::GeometryOverflow)?;
+        match image {
+            Image::Rgb8(frame) => {
+                let pixels = &frame[row_index][left..left + width];
+                let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
+                for (dst, pixel) in scratch
+                    .as_mut_slice()
+                    .as_chunks_mut::<3>()
+                    .0
+                    .iter_mut()
+                    .zip(pixels)
+                {
+                    dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b]);
                 }
-                Image::Rgba8(frame) => {
-                    let pixels = &frame[row_index][left..left + width];
-                    let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch
-                        .as_mut_slice()
-                        .as_chunks_mut::<4>()
-                        .0
-                        .iter_mut()
-                        .zip(pixels)
-                    {
-                        dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b, pixel.a]);
-                    }
-                }
-                Image::Rgb16(frame) => {
-                    let pixels = &frame[row_index][left..left + width];
-                    let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch
-                        .as_mut_slice()
-                        .as_chunks_mut::<3>()
-                        .0
-                        .iter_mut()
-                        .zip(pixels)
-                    {
-                        dst.copy_from_slice(&[
-                            f32::from(pixel.r) / 65_535.0,
-                            f32::from(pixel.g) / 65_535.0,
-                            f32::from(pixel.b) / 65_535.0,
-                        ]);
-                    }
-                }
-                Image::Rgba16(frame) => {
-                    let pixels = &frame[row_index][left..left + width];
-                    let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch
-                        .as_mut_slice()
-                        .as_chunks_mut::<4>()
-                        .0
-                        .iter_mut()
-                        .zip(pixels)
-                    {
-                        dst.copy_from_slice(&[
-                            f32::from(pixel.r) / 65_535.0,
-                            f32::from(pixel.g) / 65_535.0,
-                            f32::from(pixel.b) / 65_535.0,
-                            f32::from(pixel.a) / 65_535.0,
-                        ]);
-                    }
-                }
-                _ => return Err(Error::UnsupportedCodecLayout),
             }
-            if let Some(scratch) = &scratch_u8 {
-                sink(y, DecodedRow::U8(scratch.as_slice()))?;
-            } else if let Some(scratch) = &scratch_f32 {
-                sink(y, DecodedRow::F32(scratch.as_slice()))?;
-            } else {
-                return Err(Error::UnsupportedCodecLayout);
+            Image::Rgba8(frame) => {
+                let pixels = &frame[row_index][left..left + width];
+                let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
+                for (dst, pixel) in scratch
+                    .as_mut_slice()
+                    .as_chunks_mut::<4>()
+                    .0
+                    .iter_mut()
+                    .zip(pixels)
+                {
+                    dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b, pixel.a]);
+                }
             }
+            Image::Rgb16(frame) => {
+                let pixels = &frame[row_index][left..left + width];
+                let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
+                for (dst, pixel) in scratch
+                    .as_mut_slice()
+                    .as_chunks_mut::<3>()
+                    .0
+                    .iter_mut()
+                    .zip(pixels)
+                {
+                    dst.copy_from_slice(&[
+                        f32::from(pixel.r) / 65_535.0,
+                        f32::from(pixel.g) / 65_535.0,
+                        f32::from(pixel.b) / 65_535.0,
+                    ]);
+                }
+            }
+            Image::Rgba16(frame) => {
+                let pixels = &frame[row_index][left..left + width];
+                let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
+                for (dst, pixel) in scratch
+                    .as_mut_slice()
+                    .as_chunks_mut::<4>()
+                    .0
+                    .iter_mut()
+                    .zip(pixels)
+                {
+                    dst.copy_from_slice(&[
+                        f32::from(pixel.r) / 65_535.0,
+                        f32::from(pixel.g) / 65_535.0,
+                        f32::from(pixel.b) / 65_535.0,
+                        f32::from(pixel.a) / 65_535.0,
+                    ]);
+                }
+            }
+            _ => return Err(Error::UnsupportedCodecLayout),
         }
+        if let Some(scratch) = &scratch_u8 {
+            sink(y, DecodedRow::U8(scratch.as_slice()))?;
+        } else if let Some(scratch) = &scratch_f32 {
+            sink(y, DecodedRow::F32(scratch.as_slice()))?;
+        } else {
+            return Err(Error::UnsupportedCodecLayout);
+        }
+    }
     Ok(())
 }
 
