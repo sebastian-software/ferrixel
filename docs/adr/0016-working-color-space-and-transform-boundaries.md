@@ -61,3 +61,7 @@ Real codec and encoder dataflow makes the proposed format contract too expensive
 ## Amendment log
 
 - 2026-10-31 — Proposed an explicit, region-capable working-color transform boundary for M1.
+
+## 2026-10-31: narrow reference experiment (not acceptance)
+
+A dependency-free scalar `src/working_color.rs` proof now decodes tagged sRGB or Display P3 (D65, sRGB transfer) samples into unclipped linear sRGB triples using the W3C CSS Color 4 rational reference matrices. A separate helper converts explicitly straight alpha into linear-light premultiplied samples. These values are not tied to a graph, decoder or full-frame buffer; ICC and PQ/HLG still fail closed. Independent unit fixtures verify D65 neutral preservation, a known out-of-gamut P3 red, extended signed transfer, alpha and profile rejection. **This does not yet implement the proposed composable graph transform or an encoder-ready color-managed path.** The ADR remains Proposed until real source and sink integration is proven.

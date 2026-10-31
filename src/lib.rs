@@ -25,6 +25,7 @@ mod memory;
 mod plan;
 mod planar;
 mod surface;
+mod working_color;
 
 #[cfg(test)]
 mod tests;
@@ -40,6 +41,9 @@ mod decoded_resize_tests;
 
 #[cfg(test)]
 mod linear_srgb_tests;
+
+#[cfg(test)]
+mod working_color_tests;
 
 #[cfg(test)]
 mod color_contract_tests;

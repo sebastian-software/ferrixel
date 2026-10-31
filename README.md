@@ -45,6 +45,7 @@ A graph node describes the image it produces, not an eagerly allocated pixel arr
 ## Read the design
 
 - **[M1 — First complete image pipeline](docs/milestones/M1-complete-image-pipeline.md)**: 10 ordered work packages, acceptance gates, and a usable SDR JPEG/JXL → AVIF goal
+- [SDR working-color reference](src/working_color.rs): dependency-free, unclipped Display P3/sRGB → linear sRGB math and straight-alpha premultiplication (not yet integrated into the graph)
 
 - [Architecture sketch](docs/architecture.md)
 - [Architecture Decision Records](docs/adr/README.md) — **living**, reviewable decisions with explicit status and reconsideration triggers
