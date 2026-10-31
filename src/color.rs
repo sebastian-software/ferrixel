@@ -28,6 +28,8 @@ impl ColorEncoding {
     }
 }
 
+/// Association modes reserved for future alpha-capable codec adapters.
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AlphaMode {
     Opaque,

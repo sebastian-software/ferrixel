@@ -24,7 +24,7 @@ fn sample_f32(x: u32, y: u32, channel: u32) -> f32 {
     let x = f32::from(u16::try_from(x).unwrap());
     let y = f32::from(u16::try_from(y).unwrap());
     let channel = f32::from(u16::try_from(channel).unwrap());
-    x.mul_add(0.3, y.mul_add(0.2, channel.mul_add(0.1, -2.0)))
+    x.mul_add(0.3, y.mul_add(0.2, channel.mul_add(0.1, -1.5)))
 }
 struct PatternSource {
     info: DecoderInfo,
