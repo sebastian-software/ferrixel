@@ -30,6 +30,8 @@ fn collect(
     (bytes, report)
 }
 
+// The independent oracle intentionally uses explicit clamped float casts.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn reference_resize(input: &[u8], input_size: Size, output_size: Size) -> Vec<u8> {
     // Deliberately independent of `sample_at`, the planner, and the region
     // executor. This eager implementation acts as a correctness oracle.
@@ -118,6 +120,7 @@ fn tall_source_uses_only_the_requested_rows() {
     let cropped = graph.crop(source, rect(20, 99_999_600, 40, 200)).unwrap();
     let resized = graph.resize(cropped, size(20, 50)).unwrap();
     let budget = MemoryBudget::new(256);
+    assert_eq!(budget.snapshot().limit, 256);
     let (_, report) = collect(&graph, resized, rect(3, 4, 7, 5), &budget);
     assert!(report.synthetic_pixels <= 5 * 2 * 40);
     assert!(report.peak_managed_bytes <= 87);

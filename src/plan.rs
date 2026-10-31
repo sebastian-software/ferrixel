@@ -60,6 +60,9 @@ pub(crate) struct Sample {
     pub upper_weight: f64,
 }
 
+// The clamped values are finite integral indices in 0..input_len and thus
+// fit u32 exactly. Rust has no checked float-to-integer conversion primitive.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 pub(crate) fn sample_at(output: u32, input_len: u32, output_len: u32) -> Sample {
     debug_assert!(input_len > 0 && output_len > 0 && output < output_len);
     let mapped = (f64::from(output) + 0.5) * f64::from(input_len) / f64::from(output_len) - 0.5;

@@ -94,11 +94,12 @@ pub(crate) fn execute(
                         .chunks_exact_mut(step.region.width as usize)
                         .enumerate()
                     {
+                        let source_y = step.region.y
+                            + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
                         for (column, pixel) in line.iter_mut().enumerate() {
-                            *pixel = synthetic_pixel(
-                                step.region.x + column as u32,
-                                step.region.y + row as u32,
-                            );
+                            let source_x = step.region.x
+                                + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;
+                            *pixel = synthetic_pixel(source_x, source_y);
                         }
                     }
                     report.synthetic_pixels +=
@@ -124,20 +125,24 @@ pub(crate) fn execute(
                         .chunks_exact_mut(row_width)
                         .enumerate()
                     {
-                        let y = step.region.y + row as u32;
-                        let sy = sample_at(y, input_size.height, node.size.height);
+                        let output_y = step.region.y
+                            + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
+                        let sy = sample_at(output_y, input_size.height, node.size.height);
                         for (column, pixel) in line.iter_mut().enumerate() {
-                            let x = step.region.x + column as u32;
-                            let sx = sample_at(x, input_size.width, node.size.width);
-                            let a = f64::from(source.get(sx.lower, sy.lower));
-                            let b = f64::from(source.get(sx.upper, sy.lower));
-                            let c = f64::from(source.get(sx.lower, sy.upper));
-                            let d = f64::from(source.get(sx.upper, sy.upper));
-                            let horizontal_top = a + (b - a) * sx.upper_weight;
-                            let horizontal_bottom = c + (d - c) * sx.upper_weight;
-                            *pixel = (horizontal_top
-                                + (horizontal_bottom - horizontal_top) * sy.upper_weight)
-                                .round() as u8;
+                            let output_x = step.region.x
+                                + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;
+                            let sx = sample_at(output_x, input_size.width, node.size.width);
+                            let top_left = f64::from(source.get(sx.lower, sy.lower));
+                            let top_right = f64::from(source.get(sx.upper, sy.lower));
+                            let bottom_left = f64::from(source.get(sx.lower, sy.upper));
+                            let bottom_right = f64::from(source.get(sx.upper, sy.upper));
+                            let horizontal_top = top_left + (top_right - top_left) * sx.upper_weight;
+                            let horizontal_bottom =
+                                bottom_left + (bottom_right - bottom_left) * sx.upper_weight;
+                            *pixel = quantize_gray8(
+                                horizontal_top
+                                    + (horizontal_bottom - horizontal_top) * sy.upper_weight,
+                            );
                         }
                     }
                     // `source` is released here before the next operation.
@@ -165,5 +170,13 @@ pub(crate) fn execute(
 pub(crate) fn synthetic_pixel(x: u32, y: u32) -> u8 {
     let a = x.wrapping_mul(53);
     let b = y.wrapping_mul(97);
-    (a ^ b.rotate_left(5) ^ (x >> 3) ^ (y >> 2)) as u8
+    (a ^ b.rotate_left(5) ^ (x >> 3) ^ (y >> 2)).to_le_bytes()[0]
+}
+
+// Floating-point interpolation is explicitly clamped to the valid Gray8
+// range. Rust intentionally has no TryFrom<f64> for u8; this narrow cast is
+// therefore audited rather than turning off Clippy for all pixel operations.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn quantize_gray8(value: f64) -> u8 {
+    value.clamp(0.0, 255.0).round() as u8
 }
