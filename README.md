@@ -47,12 +47,12 @@ A graph node describes the image it produces, not an eagerly allocated pixel arr
 - [Architecture sketch](docs/architecture.md)
 - [Architecture Decision Records](docs/adr/README.md) — **living**, reviewable decisions with explicit status and reconsideration triggers
 - [Research hypotheses and codec capability checklist](docs/research/format-capabilities.md)
-- [First vertical slice](docs/roadmap.md) and [its executable contract](docs/design/region-experiment.md)
+- [First vertical slice](docs/roadmap.md), [the Gray8 experiment](docs/design/region-experiment.md), and [the borrowed planar experiment](docs/design/planar-surface-experiment.md)
 - [Contributor guide](CONTRIBUTING.md) and [agent guide](AGENTS.md)
 
 ## Development
 
-The repository contains an **internal, experimental** codec-free vertical slice: `synthetic source → crop → bilinear resize → borrowed scanline sink`. It exercises backward region planning and an explicit managed-pixel-buffer budget. No real codec, public processing API, SIMD implementation, or GPU backend exists yet.
+The repository contains **two internal, experimental, codec-free** slices: (1) `synthetic Gray8 source → crop → bilinear resize → borrowed scanline sink`, exercising backward region planning and bounded managed pixel buffers; (2) externally borrowed, byte-strided **10-bit YUV 4:2:0 planes → even-origin crop → borrowed scanline sink**, preserving color metadata without RGB conversion or pixel allocation. Chroma-phase-changing crops and planar resizing are deliberately not implemented. No real codec, public processing API, SIMD implementation, or GPU backend exists yet.
 
 ```sh
 cargo fmt --all --check

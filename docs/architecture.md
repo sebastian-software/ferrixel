@@ -94,3 +94,10 @@ caller's requested output rectangle
 **Why one row?** With extreme downsampling, two consecutive target rows can sample source rows millions of pixels apart. Taking their union as one source rectangle materializes unnecessary intervening scanlines. Planning each requested row avoids that specific trap; future planners may merge adjacent rows only when doing so is worthwhile.
 
 This experiment has no codec integration, advanced color model, multi-input branching, parallel worker scheduler, or GPU support. The budget currently tracks explicitly allocated **pixel bytes only**, not metadata, codec internals, or sink-owned buffers. This limitation must remain visible when comparing real workloads. See [the experiment's contracts](design/region-experiment.md) and ADRs [0002](adr/0002-semantic-graph-and-planner.md), [0003](adr/0003-demand-driven-regions.md), and [0004](adr/0004-buffer-ownership-and-budget.md).
+
+
+## Borrowed planar source experiment (2026-10-31)
+
+The [second executable experiment](design/planar-surface-experiment.md) introduces a `Planar10Source` node with format and CICP-like color metadata but **no owned buffer**. Execution binds borrowed byte-strided `Yuv420P10<'a>` planes to that node, then forwards crop-only requests through the existing region planner. This directly tests the graph/storage lifetime boundary. The graph is not lifetime-parametrized by decoder buffers.
+
+Only even-origin YUV 4:2:0 crops are representable as direct views: shifting the chroma phase requires a real resampling policy. Planar resize is intentionally rejected rather than using the existing Gray8 bilinear filter on subsampled/HDR data. All source memory remains caller-owned, and the executor reports no managed *pixel* allocations. This does not assert zero process allocations, universal format support, or a stable API; the next validation requires an actual decoder.
