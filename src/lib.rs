@@ -17,8 +17,8 @@ mod geometry;
 mod graph;
 mod memory;
 mod plan;
-mod surface;
 mod planar;
+mod surface;
 
 #[cfg(test)]
 mod tests;

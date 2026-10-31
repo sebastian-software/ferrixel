@@ -59,9 +59,9 @@ pub(crate) fn execute_planar10(
     // The graph may grow new nodes in future, but this executor is restricted
     // to crop-only chains: forwarding a resize without computing it would be
     // incorrect even if its final footprint looked compatible.
-    if planned.iter().skip(1).any(|step| {
-        !matches!(graph.node(step.node), Ok(n) if matches!(n.kind, NodeKind::Crop { .. }))
-    }) {
+    if planned.iter().skip(1).any(
+        |step| !matches!(graph.node(step.node), Ok(n) if matches!(n.kind, NodeKind::Crop { .. })),
+    ) {
         return Err(Error::UnsupportedPixelOperation);
     }
 

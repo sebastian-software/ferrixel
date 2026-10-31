@@ -125,7 +125,10 @@ fn planar_crop_forwards_padded_10bit_rows_without_copies() {
     let output = rect(2, 2, 5, 3);
     let upstream = plan_region(&graph, crop, output).unwrap();
     assert_eq!(upstream[0].region, rect(4, 4, 5, 3));
-    assert_eq!(graph.node(crop).unwrap().format, PixelFormat::Yuv420P10(hdr_color()));
+    assert_eq!(
+        graph.node(crop).unwrap().format,
+        PixelFormat::Yuv420P10(hdr_color())
+    );
 
     let mut observed = Vec::new();
     let report = execute_planar10(&graph, crop, source, &surface, output, |p, y, row| {
@@ -169,14 +172,21 @@ fn odd_luma_dimensions_map_to_ceil_chroma_dimensions() {
     let mut graph = Graph::new();
     let source = graph.planar_10(dimensions, hdr_color());
     let crop = graph.crop(source, rect(0, 0, 7, 5)).unwrap();
-    let report = execute_planar10(&graph, crop, source, &surface, rect(0, 0, 7, 5), |p, _, row| {
-        let wanted = match p {
-            PlaneId::Y => 14,
-            PlaneId::Cb | PlaneId::Cr => 8,
-        };
-        assert_eq!(row.len(), wanted);
-        Ok(())
-    })
+    let report = execute_planar10(
+        &graph,
+        crop,
+        source,
+        &surface,
+        rect(0, 0, 7, 5),
+        |p, _, row| {
+            let wanted = match p {
+                PlaneId::Y => 14,
+                PlaneId::Cb | PlaneId::Cr => 8,
+            };
+            assert_eq!(row.len(), wanted);
+            Ok(())
+        },
+    )
     .unwrap();
     assert_eq!(report.forwarded_rows, 11);
     assert_eq!(report.forwarded_bytes, 5 * 14 + 2 * 3 * 8);
@@ -208,10 +218,23 @@ fn unaligned_phase_and_unvalidated_planar_resize_are_rejected() {
         PlaneView::new(&c, size(4, 4), 8).unwrap(),
     )
     .unwrap();
-    let bad = execute_planar10(&graph, source, source, &surface, rect(1, 0, 4, 4), |_, _, _| Ok(()));
+    let bad = execute_planar10(
+        &graph,
+        source,
+        source,
+        &surface,
+        rect(1, 0, 4, 4),
+        |_, _, _| Ok(()),
+    );
     assert_eq!(bad, Err(Error::ChromaPhaseRequiresResampling));
     assert_eq!(
-        execute(&graph, source, rect(0, 0, 4, 4), &MemoryBudget::new(1_024), |_, _| Ok(())),
+        execute(
+            &graph,
+            source,
+            rect(0, 0, 4, 4),
+            &MemoryBudget::new(1_024),
+            |_, _| Ok(())
+        ),
         Err(Error::PixelFormatMismatch)
     );
 }
@@ -241,7 +264,14 @@ fn mismatched_external_binding_is_rejected_before_forwarding() {
         Err(Error::SourceBindingMismatch)
     );
     assert_eq!(
-        execute_planar10(&graph, other_color, other_color, &surface, roi, |_, _, _| Ok(())),
+        execute_planar10(
+            &graph,
+            other_color,
+            other_color,
+            &surface,
+            roi,
+            |_, _, _| Ok(())
+        ),
         Err(Error::SourceBindingMismatch)
     );
 }
@@ -264,10 +294,17 @@ fn cancellation_stops_forwarding_and_does_not_mutate_external_buffers() {
     let mut graph = Graph::new();
     let source = graph.planar_10(dims, hdr_color());
     let mut seen = 0;
-    let result = execute_planar10(&graph, source, source, &surface, rect(0, 0, 4, 4), |_, _, _| {
-        seen += 1;
-        Err(Error::Cancelled)
-    });
+    let result = execute_planar10(
+        &graph,
+        source,
+        source,
+        &surface,
+        rect(0, 0, 4, 4),
+        |_, _, _| {
+            seen += 1;
+            Err(Error::Cancelled)
+        },
+    );
     assert_eq!(result, Err(Error::Cancelled));
     assert_eq!(seen, 1);
     assert_eq!(ybytes, y_before);
@@ -291,9 +328,15 @@ fn synthetic_bit_depth_roundtrips_through_borrowed_bytes() {
 
 #[test]
 fn hlg_metadata_can_be_preserved_without_implicit_conversion() {
-    let hlg = ColorMetadata { transfer: TransferFunction::Hlg, ..hdr_color() };
+    let hlg = ColorMetadata {
+        transfer: TransferFunction::Hlg,
+        ..hdr_color()
+    };
     let mut graph = Graph::new();
     let source = graph.planar_10(size(2, 2), hlg);
     let crop = graph.crop(source, rect(0, 0, 2, 2)).unwrap();
-    assert_eq!(graph.node(crop).unwrap().format, PixelFormat::Yuv420P10(hlg));
+    assert_eq!(
+        graph.node(crop).unwrap().format,
+        PixelFormat::Yuv420P10(hlg)
+    );
 }
