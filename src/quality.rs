@@ -79,9 +79,18 @@ pub(crate) fn footprint(
     if count == 0 || start.checked_add(count).is_none_or(|end| end > output) {
         return Err(Error::OutOfBounds);
     }
-    let first = taps(input, output, start, filter)?;
-    let last = taps(input, output, start + count - 1, filter)?;
-    let begin = first.first().ok_or(Error::InvalidDimensions)?.index;
-    let end = last.last().ok_or(Error::InvalidDimensions)?.index;
-    Ok((begin, end - begin + 1))
+    // Lanczos sinc zero crossings can make the lowest *nonzero* tap
+    // nonmonotonic. The first/last destination locations do not necessarily
+    // bound every source tap needed in the interior of an output ROI.
+    let end = start.checked_add(count).ok_or(Error::GeometryOverflow)?;
+    let mut first_source = u32::MAX;
+    let mut last_source = 0_u32;
+    for destination in start..end {
+        let weights = taps(input, output, destination, filter)?;
+        let begin = weights.first().ok_or(Error::InvalidDimensions)?.index;
+        let finish = weights.last().ok_or(Error::InvalidDimensions)?.index;
+        first_source = first_source.min(begin);
+        last_source = last_source.max(finish);
+    }
+    Ok((first_source, last_source - first_source + 1))
 }

@@ -40,3 +40,30 @@ fn geometry_fails_closed() {
     assert!(taps(10, 2, 2, Filter::Area).is_err());
     assert!(footprint(10, 2, 1, 2, Filter::Lanczos3).is_err());
 }
+
+#[test]
+fn lanczos_zero_crossings_do_not_hide_interior_tap_indices() {
+    // Input height 3 and output height 7 has a Lanczos zero at output
+    // position 3. Position 4 then references input row zero again, so
+    // endpoint-only footprint planning could underflow or underfetch.
+    assert_eq!(footprint(3, 7, 3, 1, Filter::Lanczos3).unwrap(), (1, 1));
+    assert_eq!(footprint(3, 7, 3, 2, Filter::Lanczos3).unwrap(), (0, 3));
+    assert_eq!(footprint(3, 7, 2, 3, Filter::Lanczos3).unwrap(), (0, 3));
+
+    for input in [1, 2, 3, 7, 23] {
+        for output in [1, 3, 7, 11] {
+            for start in 0..output {
+                for count in 1..=output - start {
+                    let (first, width) =
+                        footprint(input, output, start, count, Filter::Lanczos3).unwrap();
+                    for destination in start..start + count {
+                        for tap in taps(input, output, destination, Filter::Lanczos3).unwrap() {
+                            assert!(tap.index >= first);
+                            assert!(tap.index < first + width);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
