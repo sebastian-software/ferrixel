@@ -12,6 +12,8 @@
 #![cfg_attr(not(test), allow(dead_code))]
 
 mod codecs;
+#[cfg(feature = "avif-write")]
+mod avif_sink;
 mod color;
 mod color_contract;
 mod decoded_resize;
@@ -55,3 +57,6 @@ mod working_color_tests;
 
 #[cfg(test)]
 mod color_contract_tests;
+
+#[cfg(all(test, feature = "avif-write"))]
+mod avif_sink_tests;

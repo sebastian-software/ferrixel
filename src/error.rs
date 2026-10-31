@@ -27,6 +27,9 @@ pub(crate) enum Error {
     IncompleteDecoderOutput,
     NonFinitePixelSample,
     InvalidAlphaValue,
+    InvalidEncodeOptions,
+    IncompleteOutput,
+    EncodeFailed,
     UnsupportedColorEncoding,
     UnsupportedAlphaMode,
     #[allow(dead_code)]
@@ -72,6 +75,9 @@ impl fmt::Display for Error {
             Self::Cancelled => write!(f, "processing was cancelled by the output sink"),
             Self::DecodeFailed => write!(f, "decoder rejected input or could not render it"),
             Self::NonFinitePixelSample => write!(f, "non-finite sample during resampling"),
+            Self::InvalidEncodeOptions => write!(f, "encoder quality/speed or output dimensions are invalid"),
+            Self::IncompleteOutput => write!(f, "output sink has not received every scanline"),
+            Self::EncodeFailed => write!(f, "AVIF encoder failed"),
             Self::InvalidAlphaValue => {
                 write!(f, "straight alpha must be finite and between zero and one")
             }
