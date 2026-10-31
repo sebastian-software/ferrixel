@@ -23,7 +23,7 @@ jobs:
       - name: Install AV1 assembler
         run: sudo apt-get update -qq && sudo apt-get install -y nasm
       - name: Install pinned fuzz driver
-        run: cargo install cargo-fuzz --version 0.13.1 --locked
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
       - name: Prepare real JPEG and JPEG XL corpus seeds
         run: |
           python3 - <<'PY'
