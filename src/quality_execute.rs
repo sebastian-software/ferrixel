@@ -13,7 +13,7 @@ use crate::error::Error;
 use crate::geometry::Rect;
 use crate::graph::{Graph, NodeId, NodeKind, ResizeDomain};
 use crate::memory::{ManagedBuffer, MemoryBudget};
-use crate::quality::{Filter, Tap, taps};
+use crate::quality::{Filter, taps};
 use crate::surface::PixelFormat;
 use crate::working_color::{
     decode_straight_to_premultiplied_linear_srgb, decode_to_linear_srgb, encode_linear_srgb8,
@@ -157,6 +157,7 @@ fn final_rgba(acc: [f64; 4], opaque: bool) -> Result<[u8; 4], Error> {
 
 /// A scanline sink is borrowed and non-retaining. Cancelling the sink
 /// propagates out immediately and releases all managed row reservations.
+#[allow(clippy::too_many_lines)] // Separate planning and sink lifetime are explicit here.
 pub(crate) fn execute_quality_srgb8(
     graph: &Graph,
     target: NodeId,
@@ -236,8 +237,8 @@ pub(crate) fn execute_quality_srgb8(
                     )
                     .map_err(|_| Error::GeometryOverflow)?;
                     let pixel = sample_rgba(row, source_x, channels, &info.semantics().color)?;
-                    for channel in 0..4 {
-                        horizontal.as_mut_slice()[col * 4 + channel] += pixel[channel] * tap.weight;
+                    for (channel, sample) in pixel.iter().enumerate() {
+                        horizontal.as_mut_slice()[col * 4 + channel] += sample * tap.weight;
                     }
                 }
             }
@@ -260,8 +261,8 @@ pub(crate) fn execute_quality_srgb8(
                         .iter()
                         .find(|row| row.y == tap.index)
                         .ok_or(Error::IncompleteDecoderOutput)?;
-                    for channel in 0..4 {
-                        acc[channel] += data.samples.as_slice()[col * 4 + channel] * tap.weight;
+                    for (channel, value) in acc.iter_mut().enumerate() {
+                        *value += data.samples.as_slice()[col * 4 + channel] * tap.weight;
                     }
                 }
                 let pixel = final_rgba(acc, info.layout == ChannelLayout::Rgb)?;

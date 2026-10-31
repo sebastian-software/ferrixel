@@ -204,7 +204,7 @@ impl Graph {
 
     /// Encode a distinct semantic edge: the executor must transform these
     /// samples; metadata cannot simply be rewritten.
-    pub(crate) fn to_linear_srgb(&mut self, input: NodeId) -> Result<NodeId, Error> {
+    pub(crate) fn add_linear_srgb(&mut self, input: NodeId) -> Result<NodeId, Error> {
         let parent = self.node(input)?;
         let alpha = match parent.format {
             PixelFormat::InterleavedU8(ChannelLayout::Rgb)
@@ -270,7 +270,7 @@ impl Graph {
         }))
     }
 
-    pub(crate) fn to_srgb8(&mut self, input: NodeId) -> Result<NodeId, Error> {
+    pub(crate) fn add_srgb8(&mut self, input: NodeId) -> Result<NodeId, Error> {
         let parent = self.node(input)?;
         let format = match parent.format {
             PixelFormat::InterleavedF32(ChannelLayout::Rgb)
