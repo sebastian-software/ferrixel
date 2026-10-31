@@ -61,3 +61,25 @@ fn produced_avif_is_accepted_by_an_independent_decoder() {
     );
     assert_eq!(decoded.info().layout.channels(), 3);
 }
+
+
+#[cfg(all(feature = "jpeg-xl-read", feature = "icc", feature = "avif-write"))]
+#[test]
+fn jpeg_xl_icc_can_be_explicitly_transformed_and_encoded() {
+    let opts = TransformOptions {
+        output_width: 3,
+        output_height: 2,
+        profile_policy: InputProfilePolicy::UseRenderedIcc,
+        speed: 9,
+        max_managed_bytes: 128 * 1024,
+        ..TransformOptions::default()
+    };
+    let image = transcode(
+        include_bytes!("../tests/fixtures/sample.jxl"),
+        ImageFormat::JpegXl,
+        opts,
+    ).unwrap();
+    assert_eq!(&image.avif_bytes[4..8], b"ftyp");
+    assert_eq!(image.report.decoder_requests, 1);
+    assert_eq!(image.report.engine_full_frame_intermediates, 0);
+}
