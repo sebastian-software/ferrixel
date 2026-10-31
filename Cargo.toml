@@ -1,0 +1,19 @@
+[package]
+name = "ferrixel"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+authors = ["Sebastian Software GmbH"]
+description = "Experimental pipeline-first Rust image processing engine"
+repository = "https://github.com/sebastian-software/ferrixel"
+readme = "README.md"
+publish = false
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
