@@ -331,11 +331,21 @@ fn unsupported_layouts_and_precision_are_not_silently_converted() {
             Err(Error::UnsupportedPixelOperation)
         );
     }
+    // Even a forged alpha declaration and a nominal sRGB tag cannot make
+    // CMYK's four channels semantically equivalent to RGBA.
+    let source = RawSource::new(size(2, 1), ChannelLayout::Cmyk, AlphaMode::Straight, vec![0; 8]);
+    let mut graph = Graph::new();
+    let cmyk = source.bind(&mut graph);
+    assert_eq!(
+        graph.resize_linear_srgb(cmyk, size(1, 1)),
+        Err(Error::UnsupportedPixelOperation)
+    );
+
     let mut graph = Graph::new();
     let rgb = graph
         .decoded_source(
             size(2, 1),
-            crate::surface::PixelFormat::InterleavedF32(3),
+            crate::surface::PixelFormat::InterleavedF32(ChannelLayout::Rgb),
             crate::color::ImageSemantics {
                 color: crate::color::ColorEncoding::Cicp(SRGB),
                 alpha: AlphaMode::Opaque,

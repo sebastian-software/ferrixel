@@ -6,7 +6,7 @@
 use crate::color::{AlphaMode, ImageSemantics};
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
-use crate::surface::{ColorMetadata, PixelFormat};
+use crate::surface::{ChannelLayout, ColorMetadata, PixelFormat};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct NodeId(pub(crate) usize);
@@ -140,7 +140,8 @@ impl Graph {
         let parent = self.node(input)?;
         if !matches!(
             parent.format,
-            PixelFormat::InterleavedU8(1 | 3) | PixelFormat::InterleavedF32(1 | 3)
+            PixelFormat::InterleavedU8(ChannelLayout::Gray | ChannelLayout::Rgb)
+                | PixelFormat::InterleavedF32(ChannelLayout::Gray | ChannelLayout::Rgb)
         ) || parent.semantics.alpha != AlphaMode::Opaque
         {
             return Err(Error::UnsupportedPixelOperation);
@@ -166,8 +167,8 @@ impl Graph {
     ) -> Result<NodeId, Error> {
         let parent = self.node(input)?;
         let expected_alpha = match parent.format {
-            PixelFormat::InterleavedU8(3) => AlphaMode::Opaque,
-            PixelFormat::InterleavedU8(4) => AlphaMode::Straight,
+            PixelFormat::InterleavedU8(ChannelLayout::Rgb) => AlphaMode::Opaque,
+            PixelFormat::InterleavedU8(ChannelLayout::Rgba) => AlphaMode::Straight,
             _ => return Err(Error::UnsupportedPixelOperation),
         };
         if parent.semantics.alpha != expected_alpha {

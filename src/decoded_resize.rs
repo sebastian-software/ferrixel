@@ -333,7 +333,8 @@ fn prepare_resize(
             if !matches!(info.layout, ChannelLayout::Gray | ChannelLayout::Rgb)
                 || !matches!(
                     resize.format,
-                    PixelFormat::InterleavedU8(1 | 3) | PixelFormat::InterleavedF32(1 | 3)
+                    PixelFormat::InterleavedU8(ChannelLayout::Gray | ChannelLayout::Rgb)
+                        | PixelFormat::InterleavedF32(ChannelLayout::Gray | ChannelLayout::Rgb)
                 )
             {
                 return Err(Error::UnsupportedPixelOperation);
