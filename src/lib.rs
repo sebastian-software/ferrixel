@@ -25,6 +25,7 @@ mod memory;
 mod plan;
 mod planar;
 mod quality;
+mod quality_execute;
 mod surface;
 mod working_color;
 
