@@ -64,9 +64,16 @@ for iteration in 1 2; do
         bytes=$(wc -c < "$tmp/vips.avif" | tr -d ' ')
         printf 'libvips,%s,%s,%s,%s,no\n' "$iteration" "$elapsed" "$rss" "$bytes" >> "$csv"
     else
-        printf 'libvips,%s,,,,no\n' "$iteration" >> "$csv"
-        echo "libvips AVIF output was unavailable in this runner:" >&2
+        echo "libvips AVIF output unavailable; collecting resize-only PNG baseline:" >&2
         cat "$tmp/vips-log" >&2
+        /usr/bin/time -f '%e,%M' -o "$tmp/vips-png-time" \
+            vipsthumbnail "$tmp/source.jpg" --linear --size=640x427 \
+            --output="$tmp/vips-resized.png" \
+            > "$tmp/vips-png-log" 2>&1
+        IFS=, read -r elapsed rss < "$tmp/vips-png-time"
+        bytes=$(wc -c < "$tmp/vips-resized.png" | tr -d ' ')
+        printf 'libvips-png-resize-only,%s,%s,%s,%s,no\n' \
+            "$iteration" "$elapsed" "$rss" "$bytes" >> "$csv"
     fi
 done
 
