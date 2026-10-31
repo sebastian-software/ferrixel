@@ -313,7 +313,10 @@ pub(crate) fn execute_decoded_resize(
                 return Err(Error::IncompleteDecoderOutput);
             }
             plan.render_row(row, &previous, &mut result, vertical, use_previous)?;
-            let result_y = output.y.checked_add(output_rows).ok_or(Error::GeometryOverflow)?;
+            let result_y = output
+                .y
+                .checked_add(output_rows)
+                .ok_or(Error::GeometryOverflow)?;
             sink(result_y, result.as_row())?;
             output_rows += 1;
         }
