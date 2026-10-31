@@ -159,6 +159,7 @@ impl PreparedResize {
         use_previous: bool,
     ) -> Result<(), Error> {
         match self.domain {
+            ResizeDomain::WorkingLinear(_) => Err(Error::UnsupportedPixelOperation),
             ResizeDomain::EncodedSamples => {
                 self.render_encoded_row(current, previous, result, vertical, use_previous)
             }
@@ -330,6 +331,7 @@ fn prepare_resize(
         return Err(Error::UnsupportedPixelOperation);
     };
     match domain {
+        ResizeDomain::WorkingLinear(_) => return Err(Error::UnsupportedPixelOperation),
         ResizeDomain::EncodedSamples => {
             if !matches!(info.layout, ChannelLayout::Gray | ChannelLayout::Rgb)
                 || !matches!(
