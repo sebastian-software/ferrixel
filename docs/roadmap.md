@@ -49,3 +49,7 @@ Historical JPEG output tuning, compatibility with the complete libvips or Sharp 
 ## Decoder adapter experiment
 
 Read-only JPEG and JPEG XL source adapters are introduced behind Cargo features. They validate cropped source-to-sink execution and managed vs. opaque memory boundaries; they do **not** complete phase 1's color, orientation, malformed-input and full encoder requirements. See [ADR-0012](adr/0012-codec-source-contract.md).
+
+## 2026-10-31: Real decoder resize experiment
+
+An explicitly selected sample-domain bilinear `JPEG/JPEG XL decoder → crop* → resize → crop* → borrowed row sink` path now probes real codec output and end-to-end row lifetimes. Rendered ICC/CICP and alpha association are tracked through the graph and verified on binding. No color-managed filtering, alpha-aware compositing or HDR conversion is claimed. The next work should evaluate quality-correct linear-light and premultiplied-alpha paths and measure region overfetch rather than adding codec support for its own sake. See [ADR-0013](adr/0013-sample-domain-resize.md).

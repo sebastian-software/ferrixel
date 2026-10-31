@@ -25,6 +25,7 @@ pub(crate) enum Error {
     #[allow(dead_code)]
     DecodeFailed,
     IncompleteDecoderOutput,
+    NonFinitePixelSample,
     #[allow(dead_code)]
     UnsupportedCodecLayout,
 }
@@ -67,6 +68,7 @@ impl fmt::Display for Error {
             ),
             Self::Cancelled => write!(f, "processing was cancelled by the output sink"),
             Self::DecodeFailed => write!(f, "decoder rejected input or could not render it"),
+            Self::NonFinitePixelSample => write!(f, "non-finite sample during resampling"),
             Self::IncompleteDecoderOutput => {
                 write!(f, "decoder did not provide the complete output region")
             }

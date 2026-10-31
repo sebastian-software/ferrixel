@@ -144,7 +144,7 @@ fn execute_planned_region(
                 tile.rect = step.region;
                 tile
             }
-            NodeKind::Resize { input } => {
+            NodeKind::Resize { input, .. } => {
                 let source = current.take().ok_or(Error::UnknownNode)?;
                 let input_size = graph.node(input)?.size;
                 let mut tile = Tile::allocate(step.region, budget)?;

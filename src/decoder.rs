@@ -1,5 +1,6 @@
 //! A private, capability-reporting boundary between graph planning and codecs.
 //! A requested ROI is NOT proof that the underlying codec avoided other work.
+use crate::color::{AlphaMode, ColorEncoding, ImageSemantics};
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
 use crate::graph::{Graph, NodeId, NodeKind};
@@ -56,6 +57,19 @@ pub(crate) struct DecoderInfo {
     pub rendered_cicp: Option<[u8; 4]>,
 }
 impl DecoderInfo {
+    pub(crate) fn semantics(&self) -> ImageSemantics {
+        let alpha = match self.layout {
+            ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
+            ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
+                AlphaMode::Unspecified
+            }
+        };
+        ImageSemantics {
+            color: ColorEncoding::from_metadata(self.rendered_icc.as_deref(), self.rendered_cicp),
+            alpha,
+        }
+    }
+
     pub(crate) fn pixel_format(&self) -> PixelFormat {
         match self.sample {
             SampleType::U8 => PixelFormat::InterleavedU8(self.layout.channels()),
@@ -72,13 +86,13 @@ pub(crate) enum DecodedRow<'a> {
     F32(&'a [f32]),
 }
 impl DecodedRow<'_> {
-    fn len(self) -> usize {
+    pub(crate) fn len(self) -> usize {
         match self {
             Self::U8(r) => r.len(),
             Self::F32(r) => r.len(),
         }
     }
-    fn sample_type(self) -> SampleType {
+    pub(crate) fn sample_type(self) -> SampleType {
         match self {
             Self::U8(_) => SampleType::U8,
             Self::F32(_) => SampleType::F32,
@@ -128,6 +142,7 @@ pub(crate) fn execute_decoded(
         || node.kind != NodeKind::DecoderSource
         || node.size != info.size
         || node.format != info.pixel_format()
+        || node.semantics != info.semantics()
     {
         return Err(Error::SourceBindingMismatch);
     }

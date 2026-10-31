@@ -105,3 +105,7 @@ Only even-origin YUV 4:2:0 crops are representable as direct views: shifting the
 ## Decoder source seam (experimental)
 
 Read-only JPEG and JPEG XL codecs are optional source adapters, bound to graph nodes only at execution. Their internal ownership remains outside graph semantics; a source reports either a known full-frame decode fallback or a codec-level ROI request. ROI requests do not guarantee avoided reconstruction. See [ADR-0012](adr/0012-codec-source-contract.md). The managed-memory budget does not cover codec-internal allocations. A full color-profile graph contract is still open.
+
+## Rendered color descriptor and first codec resize (experimental)
+
+Graph nodes now share exact rendered ICC and CICP metadata and alpha-association status, independent of codec-owned pixel buffers. Absent color metadata is explicitly **Unspecified**, never implicitly sRGB. The first decoder-backed resize supports only Gray/RGB U8 or F32 with no alpha, and must be explicitly requested as **encoded-sample-domain bilinear**. It is not a linear-light, color-managed, HDR-tonemapping or alpha-premultiplied resize. A single decoder request streams rows using one budgeted previous scanline and one output scanline, avoiding repeated full-frame JPEG decodes. The planner's single bounding ROI may overfetch on large downscales. See [ADR-0013](adr/0013-sample-domain-resize.md) and [the experiment](design/decoded-resize-experiment.md).

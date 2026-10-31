@@ -63,7 +63,11 @@ fn nested_crops_request_only_needed_source_pixels() {
     let mut source = Probe::new();
     let mut graph = Graph::new();
     let id = graph
-        .decoded_source(source.info.size, source.info.pixel_format())
+        .decoded_source(
+            source.info.size,
+            source.info.pixel_format(),
+            source.info.semantics(),
+        )
         .unwrap();
     let cropped = graph.crop(id, rect(2, 1, 7, 6)).unwrap();
     let cropped = graph.crop(cropped, rect(1, 2, 4, 3)).unwrap();
@@ -92,10 +96,18 @@ fn source_binding_and_cancellation_are_checked() {
     let mut source = Probe::new();
     let mut graph = Graph::new();
     let id = graph
-        .decoded_source(source.info.size, source.info.pixel_format())
+        .decoded_source(
+            source.info.size,
+            source.info.pixel_format(),
+            source.info.semantics(),
+        )
         .unwrap();
     let wrong = graph
-        .decoded_source(Size::new(2, 2).unwrap(), source.info.pixel_format())
+        .decoded_source(
+            Size::new(2, 2).unwrap(),
+            source.info.pixel_format(),
+            source.info.semantics(),
+        )
         .unwrap();
     assert_eq!(
         execute_decoded(
@@ -139,7 +151,11 @@ fn jpeg_read_only_fallback_is_explicit_and_budgeted() {
     assert_eq!(source.info().access, DecodeAccess::FullFrameFallback);
     let mut graph = Graph::new();
     let id = graph
-        .decoded_source(source.info().size, source.info().pixel_format())
+        .decoded_source(
+            source.info().size,
+            source.info().pixel_format(),
+            source.info().semantics(),
+        )
         .unwrap();
     let crop = graph.crop(id, rect(2, 1, 4, 3)).unwrap();
     let mut ys = Vec::new();
@@ -193,7 +209,11 @@ fn jpeg_xl_requests_codec_region_and_delivers_float_scanlines() {
     assert_eq!(source.info().access, DecodeAccess::CodecRegionRequest);
     let mut graph = Graph::new();
     let id = graph
-        .decoded_source(source.info().size, source.info().pixel_format())
+        .decoded_source(
+            source.info().size,
+            source.info().pixel_format(),
+            source.info().semantics(),
+        )
         .unwrap();
     let crop = graph.crop(id, rect(1, 1, 5, 3)).unwrap();
     let budget = MemoryBudget::new(24);
