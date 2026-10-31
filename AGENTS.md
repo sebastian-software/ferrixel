@@ -10,6 +10,7 @@ Ferrixel is in an intentionally **design-first** phase. Do not turn a proposed a
 - Keep architecture decisions **living**: update the ADR and its evidence and review date when design changes. Record replacements and supersessions explicitly; do not silently rewrite historical rationale.
 - Prefer narrow abstractions supported by a realistic end-to-end use case to speculative extensibility.
 - No `unsafe` in the engine crate. If a future codec or platform adapter needs `unsafe` or FFI, isolate and audit that boundary; do not imply that the entire dependency graph is memory-safe.
+- Read [M1 milestone plan](docs/milestones/M1-complete-image-pipeline.md) before expanding pipeline scope; preserve its acceptance criteria and explicit codec-license gates.
 - No unmeasured performance claims. Establish correctness and a scalar/reference path before hand-written SIMD or GPU specialization.
 - Never optimize only for historical JPEG compatibility at the expense of modern formats; do not claim partial decoding is supported unless the *specific decoder implementation* exposes it.
 - Keep output semantics explicit: crop coordinates, orientation, bit depth, color space, transfer function, chroma siting, alpha handling, precision and filtering all matter.

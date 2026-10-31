@@ -1,5 +1,9 @@
 # Implementation roadmap
 
+**Current milestone:** [M1 — First complete image pipeline](milestones/M1-complete-image-pipeline.md) (planned). It turns the current architecture probes into a usable SDR JPEG/JPEG XL → AVIF tool through ten gated work packages. Its acceptance criteria and dependency ordering supersede the earlier broad phase summaries below; these remain as research/progress history, not a contradictory second task list.
+
+[Encoder/CMS candidates and licensing](research/2026-10-31-encoder-and-cms-candidates.md) identify a permissively licensed AVIF path, a candidate ICC backend, and a JPEG XL encoder license gate. See [ADR-0016](adr/0016-working-color-space-and-transform-boundaries.md) (Proposed) for the working-color design contract.
+
 *Sequence, not a deadline or a commitment to a fixed API.* Progress depends on tests and architectural evidence, not feature count.
 
 ## 0. The smallest correct pipeline — experimental implementation
