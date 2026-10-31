@@ -224,8 +224,7 @@ fn two_dimensional_area_reference_handles_mixed_opacity() {
         Size::new(2, 2).unwrap(),
         ChannelLayout::Rgba,
         vec![
-            255, 0, 0, 255, 0, 0, 255, 0,
-            0, 255, 0, 128, 255, 255, 255, 64,
+            255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 128, 255, 255, 255, 64,
         ],
     );
     let (graph, input, output) = make_graph(&source, Size::new(1, 1).unwrap(), Filter::Area);
@@ -264,11 +263,17 @@ fn downstream_output_region_uses_crop_coordinates_not_source_origin() {
     let mut source = RgbSource::new(Size::new(5, 4).unwrap(), ChannelLayout::Rgb, pixels);
     let mut graph = Graph::new();
     let input = graph
-        .decoded_source(source.info.size, source.info.pixel_format(), source.info.semantics())
+        .decoded_source(
+            source.info.size,
+            source.info.pixel_format(),
+            source.info.semantics(),
+        )
         .unwrap();
     let crop = graph.crop(input, Rect::new(1, 1, 3, 2).unwrap()).unwrap();
     let linear = graph.add_linear_srgb(crop).unwrap();
-    let resized = graph.resize_working(linear, Size::new(2, 1).unwrap(), Filter::Area).unwrap();
+    let resized = graph
+        .resize_working(linear, Size::new(2, 1).unwrap(), Filter::Area)
+        .unwrap();
     let output = graph.add_srgb8(resized).unwrap();
     let mut pixels = Vec::new();
     let budget = MemoryBudget::new(512);
@@ -304,8 +309,12 @@ fn deterministic_resampler_property_matrix_preserves_flat_srgb() {
             (13, 2, 2, 12),
         ] {
             let constant = [78_u8, 159, 232];
-            let image: Vec<u8> = constant.iter().copied().cycle()
-                .take(width * height * 3).collect();
+            let image: Vec<u8> = constant
+                .iter()
+                .copied()
+                .cycle()
+                .take(width * height * 3)
+                .collect();
             let mut source = RgbSource::new(
                 Size::new(width as u32, height as u32).unwrap(),
                 ChannelLayout::Rgb,
