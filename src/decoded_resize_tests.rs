@@ -234,7 +234,7 @@ fn metadata_mismatch_is_detected_before_decode() {
         ),
         Err(Error::SourceBindingMismatch)
     );
-    assert!(source.requests.is_empty());
+    assert_eq!(source.requests.len(), 0);
 }
 
 #[test]
@@ -280,7 +280,7 @@ fn memory_budget_and_cancellation_are_checked() {
         Err(Error::BudgetExceeded { .. })
     ));
     assert_eq!(small.snapshot().live, 0);
-    assert!(source.requests.is_empty());
+    assert_eq!(source.requests.len(), 0);
     let budget = MemoryBudget::new(60);
     let mut calls = 0;
     assert_eq!(

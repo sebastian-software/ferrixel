@@ -137,24 +137,94 @@ fn horizontal(
     Ok(left_sample + (right_sample - left_sample) * x.upper_weight)
 }
 
-/// Execute exactly one interleaved resize, with optional crops on either side.
-///
-/// Both U8 and F32 preserve the original color encoding and sample type. The
-/// graph has explicitly opted into encoded-domain interpolation. This does not
-/// linearize transfer functions or apply an ICC transform.
-pub(crate) fn execute_decoded_resize(
+#[derive(Clone, Copy)]
+struct PreparedResize {
+    source_region: Rect,
+    resize_region: Rect,
+    input_footprint: Rect,
+    input_size: crate::geometry::Size,
+    resized_size: crate::geometry::Size,
+    channels: usize,
+}
+
+impl PreparedResize {
+    fn render_row(
+        self,
+        current: DecodedRow<'_>,
+        previous: &PreviousRow,
+        result: &mut OutputRow,
+        vertical: Sample,
+        use_previous: bool,
+    ) -> Result<(), Error> {
+        for column in 0..self.resize_region.width {
+            let output_x = self
+                .resize_region
+                .x
+                .checked_add(column)
+                .ok_or(Error::GeometryOverflow)?;
+            let x = sample_at(output_x, self.input_size.width, self.resized_size.width);
+            for channel in 0..self.channels {
+                let top = horizontal(
+                    current,
+                    previous,
+                    use_previous,
+                    x,
+                    self.input_footprint.x,
+                    self.channels,
+                    channel,
+                )?;
+                let bottom = horizontal(
+                    current,
+                    previous,
+                    false,
+                    x,
+                    self.input_footprint.x,
+                    self.channels,
+                    channel,
+                )?;
+                let value = top + (bottom - top) * vertical.upper_weight;
+                let position = usize::try_from(column)
+                    .map_err(|_| Error::GeometryOverflow)?
+                    .checked_mul(self.channels)
+                    .and_then(|v| v.checked_add(channel))
+                    .ok_or(Error::GeometryOverflow)?;
+                result.write(position, value)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn upper_source_y(self, output_row: u32) -> Result<(Sample, u32), Error> {
+        let output_y = self
+            .resize_region
+            .y
+            .checked_add(output_row)
+            .ok_or(Error::GeometryOverflow)?;
+        let vertical = sample_at(output_y, self.input_size.height, self.resized_size.height);
+        let upper_y = self
+            .source_region
+            .y
+            .checked_add(
+                vertical
+                    .upper
+                    .checked_sub(self.input_footprint.y)
+                    .ok_or(Error::OutOfBounds)?,
+            )
+            .ok_or(Error::GeometryOverflow)?;
+        Ok((vertical, upper_y))
+    }
+}
+
+fn prepare_resize(
     graph: &Graph,
     target: NodeId,
     bound_source: NodeId,
-    source: &mut dyn DecodeSource,
+    info: &crate::decoder::DecoderInfo,
     output: Rect,
-    budget: &MemoryBudget,
-    mut sink: impl FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
-) -> Result<ResizeReport, Error> {
+) -> Result<PreparedResize, Error> {
     let steps = plan_region(graph, target, output)?;
     let first = steps.first().ok_or(Error::UnknownNode)?;
     let source_node = graph.node(first.node)?;
-    let info = source.info().clone();
     if first.node != bound_source
         || source_node.kind != NodeKind::DecoderSource
         || source_node.size != info.size
@@ -166,8 +236,6 @@ pub(crate) fn execute_decoded_resize(
     if !matches!(info.layout, ChannelLayout::Gray | ChannelLayout::Rgb) {
         return Err(Error::UnsupportedPixelOperation);
     }
-
-    let channels = usize::from(info.layout.channels());
     let mut resize_index = None;
     for (index, step) in steps.iter().enumerate().skip(1) {
         match graph.node(step.node)?.kind {
@@ -193,88 +261,59 @@ pub(crate) fn execute_decoded_resize(
     ) {
         return Err(Error::UnsupportedPixelOperation);
     }
+    Ok(PreparedResize {
+        source_region: first.region,
+        resize_region: resize_step.region,
+        input_footprint: input_step.region,
+        input_size: input.size,
+        resized_size: resize.size,
+        channels: usize::from(info.layout.channels()),
+    })
+}
 
-    let row_samples = usize::try_from(first.region.width)
+/// Execute exactly one interleaved resize, with optional crops on either side.
+///
+/// The graph explicitly opts into encoded-domain interpolation. This does not
+/// perform ICC transformations or linearize transfer functions.
+pub(crate) fn execute_decoded_resize(
+    graph: &Graph,
+    target: NodeId,
+    bound_source: NodeId,
+    source: &mut dyn DecodeSource,
+    output: Rect,
+    budget: &MemoryBudget,
+    mut sink: impl FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
+) -> Result<ResizeReport, Error> {
+    let info = source.info().clone();
+    let plan = prepare_resize(graph, target, bound_source, &info, output)?;
+    let row_samples = usize::try_from(plan.source_region.width)
         .map_err(|_| Error::GeometryOverflow)?
-        .checked_mul(channels)
+        .checked_mul(plan.channels)
         .ok_or(Error::GeometryOverflow)?;
     let output_samples = usize::try_from(output.width)
         .map_err(|_| Error::GeometryOverflow)?
-        .checked_mul(channels)
+        .checked_mul(plan.channels)
         .ok_or(Error::GeometryOverflow)?;
     let mut previous = PreviousRow::allocate(info.sample, row_samples, budget)?;
     let mut result = OutputRow::allocate(info.sample, output_samples, budget)?;
-    let mut next_y = first.region.y;
+    let mut next_y = plan.source_region.y;
     let mut output_rows = 0_u32;
     let mut decoder_rows = 0_u64;
-    let decode_report = source.read_region(first.region, budget, &mut |source_y, row| {
+    let decode_report = source.read_region(plan.source_region, budget, &mut |source_y, row| {
         if source_y != next_y || row.sample_type() != info.sample || row.len() != row_samples {
             return Err(Error::IncompleteDecoderOutput);
         }
-        // Multiple output rows can use the same source scanline during upscale.
         while output_rows < output.height {
-            let output_y = resize_step
-                .region
-                .y
-                .checked_add(output_rows)
-                .ok_or(Error::GeometryOverflow)?;
-            let vertical = sample_at(output_y, input.size.height, resize.size.height);
-            let upper_source_y = first
-                .region
-                .y
-                .checked_add(
-                    vertical
-                        .upper
-                        .checked_sub(input_step.region.y)
-                        .ok_or(Error::OutOfBounds)?,
-                )
-                .ok_or(Error::GeometryOverflow)?;
+            let (vertical, upper_source_y) = plan.upper_source_y(output_rows)?;
             if upper_source_y != source_y {
                 break;
             }
             let use_previous = vertical.lower != vertical.upper;
-            if use_previous && source_y == first.region.y {
+            if use_previous && source_y == plan.source_region.y {
                 return Err(Error::IncompleteDecoderOutput);
             }
-            for column in 0..output.width {
-                let output_x = resize_step
-                    .region
-                    .x
-                    .checked_add(column)
-                    .ok_or(Error::GeometryOverflow)?;
-                let x = sample_at(output_x, input.size.width, resize.size.width);
-                for channel in 0..channels {
-                    let top = horizontal(
-                        row,
-                        &previous,
-                        use_previous,
-                        x,
-                        input_step.region.x,
-                        channels,
-                        channel,
-                    )?;
-                    let bottom = horizontal(
-                        row,
-                        &previous,
-                        false,
-                        x,
-                        input_step.region.x,
-                        channels,
-                        channel,
-                    )?;
-                    let value = top + (bottom - top) * vertical.upper_weight;
-                    let position = usize::try_from(column)
-                        .map_err(|_| Error::GeometryOverflow)?
-                        .checked_mul(channels)
-                        .and_then(|v| v.checked_add(channel))
-                        .ok_or(Error::GeometryOverflow)?;
-                    result.write(position, value)?;
-                }
-            }
-            let result_y = output
-                .y
-                .checked_add(output_rows)
-                .ok_or(Error::GeometryOverflow)?;
+            plan.render_row(row, &previous, &mut result, vertical, use_previous)?;
+            let result_y = output.y.checked_add(output_rows).ok_or(Error::GeometryOverflow)?;
             sink(result_y, result.as_row())?;
             output_rows += 1;
         }
@@ -283,7 +322,7 @@ pub(crate) fn execute_decoded_resize(
         next_y = next_y.checked_add(1).ok_or(Error::GeometryOverflow)?;
         Ok(())
     })?;
-    if decoder_rows != u64::from(first.region.height)
+    if decoder_rows != u64::from(plan.source_region.height)
         || decode_report.rows != decoder_rows
         || output_rows != output.height
     {
@@ -295,7 +334,7 @@ pub(crate) fn execute_decoded_resize(
     };
     let output_sample_bytes = u64::from(output.width)
         .checked_mul(u64::from(output.height))
-        .and_then(|len| len.checked_mul(u64::try_from(channels).ok()?))
+        .and_then(|len| len.checked_mul(u64::try_from(plan.channels).ok()?))
         .and_then(|len| len.checked_mul(sample_bytes))
         .ok_or(Error::GeometryOverflow)?;
     Ok(ResizeReport {
