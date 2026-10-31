@@ -9,7 +9,12 @@ use crate::surface::PixelFormat;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ChannelLayout {
-    Gray, GrayAlpha, Rgb, Rgba, Cmyk, Cmyka,
+    Gray,
+    GrayAlpha,
+    Rgb,
+    Rgba,
+    Cmyk,
+    Cmyka,
 }
 impl ChannelLayout {
     pub(crate) const fn channels(self) -> u8 {
@@ -23,7 +28,10 @@ impl ChannelLayout {
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum SampleType { U8, F32 }
+pub(crate) enum SampleType {
+    U8,
+    F32,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DecodeAccess {
@@ -59,10 +67,16 @@ pub(crate) enum DecodedRow<'a> {
 }
 impl DecodedRow<'_> {
     fn len(self) -> usize {
-        match self { Self::U8(r) => r.len(), Self::F32(r) => r.len() }
+        match self {
+            Self::U8(r) => r.len(),
+            Self::F32(r) => r.len(),
+        }
     }
     fn sample_type(self) -> SampleType {
-        match self { Self::U8(_) => SampleType::U8, Self::F32(_) => SampleType::F32 }
+        match self {
+            Self::U8(_) => SampleType::U8,
+            Self::F32(_) => SampleType::F32,
+        }
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -104,13 +118,15 @@ pub(crate) fn execute_decoded(
     let first = steps.first().ok_or(Error::UnknownNode)?;
     let node = graph.node(first.node)?;
     let info = source.info();
-    if first.node != source_node || node.kind != NodeKind::DecoderSource
-        || node.size != info.size || node.format != info.pixel_format()
+    if first.node != source_node
+        || node.kind != NodeKind::DecoderSource
+        || node.size != info.size
+        || node.format != info.pixel_format()
     {
         return Err(Error::SourceBindingMismatch);
     }
     if steps.iter().skip(1).any(
-        |step| !matches!(graph.node(step.node), Ok(n) if matches!(n.kind, NodeKind::Crop { .. }))
+        |step| !matches!(graph.node(step.node), Ok(n) if matches!(n.kind, NodeKind::Crop { .. })),
     ) {
         return Err(Error::UnsupportedPixelOperation);
     }
@@ -122,11 +138,13 @@ pub(crate) fn execute_decoded(
     let mut expected_y = first.region.y;
     let mut delivered = 0_u32;
     let report = source.read_region(first.region, budget, &mut |y, row| {
-        if y != expected_y || row.len() != expected_samples
-            || row.sample_type() != expected_type {
+        if y != expected_y || row.len() != expected_samples || row.sample_type() != expected_type {
             return Err(Error::IncompleteDecoderOutput);
         }
-        let output_y = output.y.checked_add(delivered).ok_or(Error::GeometryOverflow)?;
+        let output_y = output
+            .y
+            .checked_add(delivered)
+            .ok_or(Error::GeometryOverflow)?;
         sink(output_y, row)?;
         delivered += 1;
         expected_y += 1;

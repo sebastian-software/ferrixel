@@ -114,8 +114,8 @@ fn execute_planned_region(
         }
         let next = match node.kind {
             NodeKind::Planar10Source | NodeKind::DecoderSource => {
-                    return Err(Error::PixelFormatMismatch);
-                }
+                return Err(Error::PixelFormatMismatch);
+            }
             NodeKind::Synthetic => {
                 let mut tile = Tile::allocate(step.region, budget)?;
                 for (row, line) in tile

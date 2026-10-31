@@ -1,7 +1,7 @@
 //! JPEG XL adapter: codec-level ROI request, float output scanlines.
 //! ROI is a capability, not a guarantee of skipped internal codec work.
-use std::io::Cursor;
 use jxl_oxide::{CropInfo, JxlImage, PixelFormat};
+use std::io::Cursor;
 
 use crate::decoder::{
     ChannelLayout, DecodeAccess, DecodeReport, DecodeSource, DecodedRow, DecoderInfo, SampleType,
@@ -40,7 +40,9 @@ impl JxlSource {
     }
 }
 impl DecodeSource for JxlSource {
-    fn info(&self) -> &DecoderInfo { &self.info }
+    fn info(&self) -> &DecoderInfo {
+        &self.info
+    }
 
     fn read_region(
         &mut self,
@@ -48,21 +50,32 @@ impl DecodeSource for JxlSource {
         budget: &MemoryBudget,
         sink: &mut dyn FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
     ) -> Result<DecodeReport, Error> {
-        if !region.fits(self.info.size) { return Err(Error::OutOfBounds); }
+        if !region.fits(self.info.size) {
+            return Err(Error::OutOfBounds);
+        }
         self.image.set_image_region(CropInfo {
-            left: region.x, top: region.y,
-            width: region.width, height: region.height,
+            left: region.x,
+            top: region.y,
+            width: region.width,
+            height: region.height,
         });
-        let rendered = self.image.render_frame_cropped(0)
+        let rendered = self
+            .image
+            .render_frame_cropped(0)
             .map_err(|_| Error::DecodeFailed)?;
         // Orientation/ROI coordinate mapping is not validated yet.
-        if rendered.orientation() != 1 { return Err(Error::UnsupportedPixelOperation); }
+        if rendered.orientation() != 1 {
+            return Err(Error::UnsupportedPixelOperation);
+        }
         let mut stream = rendered.stream();
-        if stream.width() != region.width || stream.height() != region.height
-            || stream.channels() != u32::from(self.info.layout.channels()) {
+        if stream.width() != region.width
+            || stream.height() != region.height
+            || stream.channels() != u32::from(self.info.layout.channels())
+        {
             return Err(Error::IncompleteDecoderOutput);
         }
-        let row_samples = usize::try_from(region.width).map_err(|_| Error::GeometryOverflow)?
+        let row_samples = usize::try_from(region.width)
+            .map_err(|_| Error::GeometryOverflow)?
             .checked_mul(usize::from(self.info.layout.channels()))
             .ok_or(Error::GeometryOverflow)?;
         let mut scratch = budget.allocate_typed::<f32>(row_samples)?;
@@ -72,9 +85,11 @@ impl DecodeSource for JxlSource {
             }
             sink(y, DecodedRow::F32(scratch.as_slice()))?;
         }
-        let output_bytes = u64::try_from(row_samples).map_err(|_| Error::GeometryOverflow)?
+        let output_bytes = u64::try_from(row_samples)
+            .map_err(|_| Error::GeometryOverflow)?
             .checked_mul(u64::from(region.height))
-            .and_then(|n| n.checked_mul(4)).ok_or(Error::GeometryOverflow)?;
+            .and_then(|n| n.checked_mul(4))
+            .ok_or(Error::GeometryOverflow)?;
         Ok(DecodeReport {
             requested: region,
             access: DecodeAccess::CodecRegionRequest,

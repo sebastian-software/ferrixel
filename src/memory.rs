@@ -65,7 +65,8 @@ impl MemoryBudget {
         &self,
         elements: usize,
     ) -> Result<ManagedBuffer<T>, Error> {
-        let bytes = elements.checked_mul(std::mem::size_of::<T>())
+        let bytes = elements
+            .checked_mul(std::mem::size_of::<T>())
             .ok_or(Error::GeometryOverflow)?;
         let mut live = self.state.live.load(Ordering::Acquire);
         loop {

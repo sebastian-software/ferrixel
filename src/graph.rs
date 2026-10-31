@@ -62,11 +62,22 @@ impl Graph {
     }
 
     /// Bind an encoded source at execution time; the graph owns no pixel data.
-    pub(crate) fn decoded_source(&mut self, size: Size, format: PixelFormat) -> Result<NodeId, Error> {
-        if !matches!(format, PixelFormat::InterleavedU8(_) | PixelFormat::InterleavedF32(_)) {
+    pub(crate) fn decoded_source(
+        &mut self,
+        size: Size,
+        format: PixelFormat,
+    ) -> Result<NodeId, Error> {
+        if !matches!(
+            format,
+            PixelFormat::InterleavedU8(_) | PixelFormat::InterleavedF32(_)
+        ) {
             return Err(Error::PixelFormatMismatch);
         }
-        Ok(self.push(Node { kind: NodeKind::DecoderSource, size, format }))
+        Ok(self.push(Node {
+            kind: NodeKind::DecoderSource,
+            size,
+            format,
+        }))
     }
 
     pub(crate) fn crop(&mut self, input: NodeId, rect: Rect) -> Result<NodeId, Error> {
