@@ -59,22 +59,32 @@ fn decode_srgb(encoded: f64) -> f64 {
 
 /// Matrix-vector multiplication with no quantization, clipping or allocation.
 fn transform(matrix: [[f64; 3]; 3], rgb: [f64; 3]) -> [f64; 3] {
-    matrix.map(|row| {
-        row[0].mul_add(rgb[0], row[1].mul_add(rgb[1], row[2] * rgb[2]))
-    })
+    matrix.map(|row| row[0].mul_add(rgb[0], row[1].mul_add(rgb[1], row[2] * rgb[2])))
 }
 
 /// The W3C CSS Color 4 Display P3 (D65) to CIE XYZ D65 reference matrix.
 const P3_TO_XYZ_D65: [[f64; 3]; 3] = [
-    [608311.0 / 1250200.0, 189793.0 / 714400.0, 198249.0 / 1000160.0],
-    [35783.0 / 156275.0, 247089.0 / 357200.0, 198249.0 / 2500400.0],
+    [
+        608311.0 / 1250200.0,
+        189793.0 / 714400.0,
+        198249.0 / 1000160.0,
+    ],
+    [
+        35783.0 / 156275.0,
+        247089.0 / 357200.0,
+        198249.0 / 2500400.0,
+    ],
     [0.0, 32229.0 / 714400.0, 5220557.0 / 5000800.0],
 ];
 
 /// The W3C CSS Color 4 CIE XYZ D65 to linear sRGB reference matrix.
 const XYZ_D65_TO_SRGB: [[f64; 3]; 3] = [
     [12831.0 / 3959.0, -329.0 / 214.0, -1974.0 / 3959.0],
-    [-851781.0 / 878810.0, 1648619.0 / 878810.0, 36519.0 / 878810.0],
+    [
+        -851781.0 / 878810.0,
+        1648619.0 / 878810.0,
+        36519.0 / 878810.0,
+    ],
     [705.0 / 12673.0, -2585.0 / 12673.0, 705.0 / 667.0],
 ];
 

@@ -3,9 +3,7 @@
 
 use crate::color::ColorEncoding;
 use crate::error::Error;
-use crate::working_color::{
-    decode_straight_to_premultiplied_linear_srgb, decode_to_linear_srgb,
-};
+use crate::working_color::{decode_straight_to_premultiplied_linear_srgb, decode_to_linear_srgb};
 
 fn near(actual: f64, expected: f64, epsilon: f64) {
     assert!(
@@ -27,8 +25,8 @@ fn srgb_midpoint_is_decoded_before_any_resampling() {
 fn d65_white_and_neutral_gray_are_invariant_between_display_p3_and_srgb() {
     let p3 = ColorEncoding::Cicp([12, 13, 0, 1]);
     for encoded in [0.0, 0.5, 1.0] {
-        let srgb = decode_to_linear_srgb(&ColorEncoding::Cicp([1, 13, 0, 1]), [encoded; 3])
-            .unwrap();
+        let srgb =
+            decode_to_linear_srgb(&ColorEncoding::Cicp([1, 13, 0, 1]), [encoded; 3]).unwrap();
         let transformed = decode_to_linear_srgb(&p3, [encoded; 3]).unwrap();
         for channel in 0..3 {
             near(transformed.rgb[channel], srgb.rgb[channel], 2.0e-12);
@@ -38,8 +36,7 @@ fn d65_white_and_neutral_gray_are_invariant_between_display_p3_and_srgb() {
 
 #[test]
 fn display_p3_red_is_out_of_srgb_gamut_and_must_not_be_clipped() {
-    let red = decode_to_linear_srgb(&ColorEncoding::Cicp([12, 13, 0, 1]), [1.0, 0.0, 0.0])
-        .unwrap();
+    let red = decode_to_linear_srgb(&ColorEncoding::Cicp([12, 13, 0, 1]), [1.0, 0.0, 0.0]).unwrap();
     near(red.rgb[0], 1.224_940_176_280_559_8, 1.0e-10);
     near(red.rgb[1], -0.042_056_954_709_688_3, 1.0e-10);
     near(red.rgb[2], -0.019_637_554_590_334, 1.0e-10);
@@ -54,7 +51,11 @@ fn straight_alpha_is_applied_after_linearization_and_gamut_conversion() {
         decode_straight_to_premultiplied_linear_srgb(&p3, [1.0, 0.0, 0.0], 0.25).unwrap();
     near(premultiplied.alpha, 0.25, 0.0);
     for channel in 0..3 {
-        near(premultiplied.rgb[channel], straight.rgb[channel] * 0.25, 1.0e-14);
+        near(
+            premultiplied.rgb[channel],
+            straight.rgb[channel] * 0.25,
+            1.0e-14,
+        );
     }
     let invisible =
         decode_straight_to_premultiplied_linear_srgb(&p3, [1.0, 0.0, 0.0], 0.0).unwrap();
