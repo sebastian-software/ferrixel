@@ -101,3 +101,7 @@ This experiment has no codec integration, advanced color model, multi-input bran
 The [second executable experiment](design/planar-surface-experiment.md) introduces a `Planar10Source` node with format and CICP-like color metadata but **no owned buffer**. Execution binds borrowed byte-strided `Yuv420P10<'a>` planes to that node, then forwards crop-only requests through the existing region planner. This directly tests the graph/storage lifetime boundary. The graph is not lifetime-parametrized by decoder buffers.
 
 Only even-origin YUV 4:2:0 crops are representable as direct views: shifting the chroma phase requires a real resampling policy. Planar resize is intentionally rejected rather than using the existing Gray8 bilinear filter on subsampled/HDR data. All source memory remains caller-owned, and the executor reports no managed *pixel* allocations. This does not assert zero process allocations, universal format support, or a stable API; the next validation requires an actual decoder.
+
+## Decoder source seam (experimental)
+
+Read-only JPEG and JPEG XL codecs are optional source adapters, bound to graph nodes only at execution. Their internal ownership remains outside graph semantics; a source reports either a known full-frame decode fallback or a codec-level ROI request. ROI requests do not guarantee avoided reconstruction. See [ADR-0012](adr/0012-codec-source-contract.md). The managed-memory budget does not cover codec-internal allocations. A full color-profile graph contract is still open.

@@ -26,6 +26,7 @@ Every ADR contains **Status**, **Date**, **Last reviewed**, **Context**, **Decis
 | [0008](0008-initial-vertical-slice.md) | Minimal architecture-validating implementation | Experimental |
 | [0009](0009-living-adr-process.md) | Decision lifecycle and amendment policy | Accepted |
 | [0010](0010-dual-licensing.md) | Dual-license Ferrixel under MIT OR Apache-2.0 | Accepted |
+| [0012](0012-codec-source-contract.md) | Real decoder sources: explicit ROI capabilities and JPEG fallback | Experimental |
 | [0011](0011-borrowed-planar-surface-contract.md) | Borrowed, byte-strided YUV420P10 source contract | Experimental |
 
 ## Changing an ADR
