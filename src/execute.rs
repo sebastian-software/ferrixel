@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::geometry::Rect;
 use crate::graph::{Graph, NodeId, NodeKind};
 use crate::memory::{ManagedBytes, MemoryBudget};
-use crate::plan::{plan_region, sample_at};
+use crate::plan::{Step, plan_region, sample_at};
 
 #[derive(Debug)]
 struct Tile {
@@ -71,89 +71,7 @@ pub(crate) fn execute(
     for y in output.y..output.bottom() {
         let requested_row = Rect::new(output.x, y, output.width, 1)?;
         let planned = plan_region(graph, target, requested_row)?;
-        let mut current: Option<Tile> = None;
-
-        for step in planned {
-            let node = graph.node(step.node)?;
-            // Count nonterminal whole-image transform allocations, not input or sink data.
-            if matches!(node.kind, NodeKind::Resize { .. })
-                && step.node != target
-                && step.region.x == 0
-                && step.region.y == 0
-                && step.region.width == node.size.width
-                && step.region.height == node.size.height
-            {
-                report.full_frame_intermediates += 1;
-            }
-            let next = match node.kind {
-                NodeKind::Synthetic => {
-                    let mut tile = Tile::allocate(step.region, budget)?;
-                    for (row, line) in tile
-                        .pixels
-                        .as_mut_slice()
-                        .chunks_exact_mut(step.region.width as usize)
-                        .enumerate()
-                    {
-                        let source_y = step.region.y
-                            + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
-                        for (column, pixel) in line.iter_mut().enumerate() {
-                            let source_x = step.region.x
-                                + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;
-                            *pixel = synthetic_pixel(source_x, source_y);
-                        }
-                    }
-                    report.synthetic_pixels +=
-                        u64::from(step.region.width) * u64::from(step.region.height);
-                    tile
-                }
-                NodeKind::Crop { .. } => {
-                    // Cropping is a rebase of a borrowed view; it copies no pixels.
-                    let mut tile = current.take().ok_or(Error::UnknownNode)?;
-                    debug_assert_eq!(tile.rect.width, step.region.width);
-                    debug_assert_eq!(tile.rect.height, step.region.height);
-                    tile.rect = step.region;
-                    tile
-                }
-                NodeKind::Resize { input } => {
-                    let source = current.take().ok_or(Error::UnknownNode)?;
-                    let input_size = graph.node(input)?.size;
-                    let mut tile = Tile::allocate(step.region, budget)?;
-                    let row_width = step.region.width as usize;
-                    for (row, line) in tile
-                        .pixels
-                        .as_mut_slice()
-                        .chunks_exact_mut(row_width)
-                        .enumerate()
-                    {
-                        let output_y = step.region.y
-                            + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
-                        let sy = sample_at(output_y, input_size.height, node.size.height);
-                        for (column, pixel) in line.iter_mut().enumerate() {
-                            let output_x = step.region.x
-                                + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;
-                            let sx = sample_at(output_x, input_size.width, node.size.width);
-                            let top_left = f64::from(source.get(sx.lower, sy.lower));
-                            let top_right = f64::from(source.get(sx.upper, sy.lower));
-                            let bottom_left = f64::from(source.get(sx.lower, sy.upper));
-                            let bottom_right = f64::from(source.get(sx.upper, sy.upper));
-                            let horizontal_top =
-                                top_left + (top_right - top_left) * sx.upper_weight;
-                            let horizontal_bottom =
-                                bottom_left + (bottom_right - bottom_left) * sx.upper_weight;
-                            *pixel = quantize_gray8(
-                                horizontal_top
-                                    + (horizontal_bottom - horizontal_top) * sy.upper_weight,
-                            );
-                        }
-                    }
-                    // `source` is released here before the next operation.
-                    tile
-                }
-            };
-            current = Some(next);
-        }
-
-        let result = current.ok_or(Error::UnknownNode)?;
+        let result = execute_planned_region(graph, &planned, target, budget, &mut report)?;
         debug_assert_eq!(result.rect, requested_row);
         sink(y, result.pixels.as_slice())?;
         report.output_rows += 1;
@@ -167,6 +85,16 @@ pub(crate) fn execute(
     report.peak_managed_bytes = snapshot.peak;
     Ok(report)
 }
+
+/// Executes one planned region; independent of the sink and row scheduler.
+fn execute_planned_region(
+    graph: &Graph,
+    steps: &[Step],
+    target: NodeId,
+    budget: &MemoryBudget,
+    report: &mut Report,
+) -> Result<Tile, Error> {
+    let mut current: Option<Tile> = None;    for step in steps {        let node = graph.node(step.node)?;        // Count nonterminal whole-image transform allocations, not input or sink data.        if matches!(node.kind, NodeKind::Resize { .. })            && step.node != target            && step.region.x == 0            && step.region.y == 0            && step.region.width == node.size.width            && step.region.height == node.size.height        {            report.full_frame_intermediates += 1;        }        let next = match node.kind {            NodeKind::Synthetic => {                let mut tile = Tile::allocate(step.region, budget)?;                for (row, line) in tile                    .pixels                    .as_mut_slice()                    .chunks_exact_mut(step.region.width as usize)                    .enumerate()                {                    let source_y = step.region.y                        + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;                    for (column, pixel) in line.iter_mut().enumerate() {                        let source_x = step.region.x                            + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;                        *pixel = synthetic_pixel(source_x, source_y);                    }                }                report.synthetic_pixels +=                    u64::from(step.region.width) * u64::from(step.region.height);                tile            }            NodeKind::Crop { .. } => {                // Cropping is a rebase of a borrowed view; it copies no pixels.                let mut tile = current.take().ok_or(Error::UnknownNode)?;                debug_assert_eq!(tile.rect.width, step.region.width);                debug_assert_eq!(tile.rect.height, step.region.height);                tile.rect = step.region;                tile            }            NodeKind::Resize { input } => {                let source = current.take().ok_or(Error::UnknownNode)?;                let input_size = graph.node(input)?.size;                let mut tile = Tile::allocate(step.region, budget)?;                let row_width = step.region.width as usize;                for (row, line) in tile                    .pixels                    .as_mut_slice()                    .chunks_exact_mut(row_width)                    .enumerate()                {                    let output_y = step.region.y                        + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;                    let sy = sample_at(output_y, input_size.height, node.size.height);                    for (column, pixel) in line.iter_mut().enumerate() {                        let output_x = step.region.x                            + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;                        let sx = sample_at(output_x, input_size.width, node.size.width);                        let top_left = f64::from(source.get(sx.lower, sy.lower));                        let top_right = f64::from(source.get(sx.upper, sy.lower));                        let bottom_left = f64::from(source.get(sx.lower, sy.upper));                        let bottom_right = f64::from(source.get(sx.upper, sy.upper));                        let horizontal_top =                            top_left + (top_right - top_left) * sx.upper_weight;                        let horizontal_bottom =                            bottom_left + (bottom_right - bottom_left) * sx.upper_weight;                        *pixel = quantize_gray8(                            horizontal_top                                + (horizontal_bottom - horizontal_top) * sy.upper_weight,                        );                    }                }                // `source` is released here before the next operation.                tile            }        };        current = Some(next);    }    let result = current.ok_or(Error::UnknownNode)?;}
 
 pub(crate) fn synthetic_pixel(x: u32, y: u32) -> u8 {
     let a = x.wrapping_mul(53);
