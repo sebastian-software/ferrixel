@@ -39,6 +39,9 @@ mod planar_tests;
 mod quality_tests;
 
 #[cfg(test)]
+mod quality_execute_tests;
+
+#[cfg(test)]
 mod decoder_tests;
 
 #[cfg(test)]
