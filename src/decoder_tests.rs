@@ -1,4 +1,5 @@
 //! Codec-to-planner contract tests with tiny committed real bitstreams.
+use crate::color::AlphaMode;
 use crate::decoder::{
     ChannelLayout, DecodeAccess, DecodeReport, DecodeSource, DecodedRow, DecoderInfo, SampleType,
     execute_decoded,
@@ -24,6 +25,7 @@ impl Probe {
                 layout: ChannelLayout::Rgb,
                 sample: SampleType::U8,
                 access: DecodeAccess::CodecRegionRequest,
+                alpha: AlphaMode::Opaque,
                 rendered_icc: None,
                 rendered_cicp: None,
             },

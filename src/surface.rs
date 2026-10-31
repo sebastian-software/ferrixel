@@ -52,11 +52,36 @@ pub(crate) struct ColorMetadata {
     pub chroma_siting: ChromaSiting,
 }
 
+/// Meaningful channel order; sample count alone cannot distinguish RGBA
+/// from CMYK (or `GrayAlpha` from unrelated two-plane semantics).
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ChannelLayout {
+    Gray,
+    GrayAlpha,
+    Rgb,
+    Rgba,
+    Cmyk,
+    Cmyka,
+}
+
+impl ChannelLayout {
+    pub(crate) const fn channels(self) -> u8 {
+        match self {
+            Self::Gray => 1,
+            Self::GrayAlpha => 2,
+            Self::Rgb => 3,
+            Self::Rgba | Self::Cmyk => 4,
+            Self::Cmyka => 5,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PixelFormat {
     Gray8,
-    InterleavedU8(u8),
-    InterleavedF32(u8),
+    InterleavedU8(ChannelLayout),
+    InterleavedF32(ChannelLayout),
     /// 4:2:0 planar YCbCr; each sample is a LE u16 containing 10 valid bits.
     Yuv420P10(ColorMetadata),
 }

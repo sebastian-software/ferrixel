@@ -8,28 +8,10 @@ use crate::memory::MemoryBudget;
 use crate::plan::plan_region;
 use crate::surface::PixelFormat;
 
-// The opt-in decoders instantiate different subsets of these layouts.
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ChannelLayout {
-    Gray,
-    GrayAlpha,
-    Rgb,
-    Rgba,
-    Cmyk,
-    Cmyka,
-}
-impl ChannelLayout {
-    pub(crate) const fn channels(self) -> u8 {
-        match self {
-            Self::Gray => 1,
-            Self::GrayAlpha => 2,
-            Self::Rgb => 3,
-            Self::Rgba | Self::Cmyk => 4,
-            Self::Cmyka => 5,
-        }
-    }
-}
+// Preserve the decoder module's import path while keeping channel meaning
+// in the shared surface contract used by both graph and codec adapters.
+pub(crate) use crate::surface::ChannelLayout;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum SampleType {
     U8,
@@ -52,28 +34,24 @@ pub(crate) struct DecoderInfo {
     pub layout: ChannelLayout,
     pub sample: SampleType,
     pub access: DecodeAccess,
+    /// Alpha association of emitted samples, not of the encoded bitstream.
+    pub alpha: AlphaMode,
     /// Describes *emitted* samples. None means unknown, not assumed sRGB.
     pub rendered_icc: Option<Vec<u8>>,
     pub rendered_cicp: Option<[u8; 4]>,
 }
 impl DecoderInfo {
     pub(crate) fn semantics(&self) -> ImageSemantics {
-        let alpha = match self.layout {
-            ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
-            ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
-                AlphaMode::Unspecified
-            }
-        };
         ImageSemantics {
             color: ColorEncoding::from_metadata(self.rendered_icc.as_deref(), self.rendered_cicp),
-            alpha,
+            alpha: self.alpha,
         }
     }
 
     pub(crate) fn pixel_format(&self) -> PixelFormat {
         match self.sample {
-            SampleType::U8 => PixelFormat::InterleavedU8(self.layout.channels()),
-            SampleType::F32 => PixelFormat::InterleavedF32(self.layout.channels()),
+            SampleType::U8 => PixelFormat::InterleavedU8(self.layout),
+            SampleType::F32 => PixelFormat::InterleavedF32(self.layout),
         }
     }
 }

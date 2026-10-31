@@ -145,6 +145,7 @@ struct PreparedResize {
     input_size: crate::geometry::Size,
     resized_size: crate::geometry::Size,
     channels: usize,
+    domain: ResizeDomain,
 }
 
 impl PreparedResize {
@@ -156,12 +157,26 @@ impl PreparedResize {
         vertical: Sample,
         use_previous: bool,
     ) -> Result<(), Error> {
+        match self.domain {
+            ResizeDomain::EncodedSamples => {
+                self.render_encoded_row(current, previous, result, vertical, use_previous)
+            }
+            ResizeDomain::LinearSrgb => {
+                self.render_linear_srgb_row(current, previous, result, vertical, use_previous)
+            }
+        }
+    }
+
+    fn render_encoded_row(
+        self,
+        current: DecodedRow<'_>,
+        previous: &PreviousRow,
+        result: &mut OutputRow,
+        vertical: Sample,
+        use_previous: bool,
+    ) -> Result<(), Error> {
         for column in 0..self.resize_region.width {
-            let output_x = self
-                .resize_region
-                .x
-                .checked_add(column)
-                .ok_or(Error::GeometryOverflow)?;
+            let output_x = self.resize_region.x + column;
             let x = sample_at(output_x, self.input_size.width, self.resized_size.width);
             for channel in 0..self.channels {
                 let top = horizontal(
@@ -189,6 +204,67 @@ impl PreparedResize {
                     .and_then(|v| v.checked_add(channel))
                     .ok_or(Error::GeometryOverflow)?;
                 result.write(position, value)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn render_linear_srgb_row(
+        self,
+        current: DecodedRow<'_>,
+        previous: &PreviousRow,
+        result: &mut OutputRow,
+        vertical: Sample,
+        use_previous: bool,
+    ) -> Result<(), Error> {
+        let DecodedRow::U8(current_pixels) = current else {
+            return Err(Error::UnsupportedPixelOperation);
+        };
+        let PreviousRow::U8(previous_pixels) = previous else {
+            return Err(Error::UnsupportedPixelOperation);
+        };
+        let top = if use_previous {
+            previous_pixels.as_slice()
+        } else {
+            current_pixels
+        };
+
+        for column in 0..self.resize_region.width {
+            let output_x = self.resize_region.x + column;
+            let x = sample_at(output_x, self.input_size.width, self.resized_size.width);
+            let lower = usize::try_from(
+                x.lower
+                    .checked_sub(self.input_footprint.x)
+                    .ok_or(Error::OutOfBounds)?,
+            )
+            .map_err(|_| Error::GeometryOverflow)?;
+            let upper = usize::try_from(
+                x.upper
+                    .checked_sub(self.input_footprint.x)
+                    .ok_or(Error::OutOfBounds)?,
+            )
+            .map_err(|_| Error::GeometryOverflow)?;
+            let lower_offset = lower
+                .checked_mul(self.channels)
+                .ok_or(Error::GeometryOverflow)?;
+            let upper_offset = upper
+                .checked_mul(self.channels)
+                .ok_or(Error::GeometryOverflow)?;
+            let encoded = crate::linear_srgb::bilinear(
+                top,
+                current_pixels,
+                lower_offset,
+                upper_offset,
+                self.channels,
+                x.upper_weight,
+                vertical.upper_weight,
+            );
+            let destination = usize::try_from(column)
+                .map_err(|_| Error::GeometryOverflow)?
+                .checked_mul(self.channels)
+                .ok_or(Error::GeometryOverflow)?;
+            for (channel, sample) in encoded.iter().take(self.channels).enumerate() {
+                result.write(destination + channel, f64::from(*sample))?;
             }
         }
         Ok(())
@@ -233,17 +309,11 @@ fn prepare_resize(
     {
         return Err(Error::SourceBindingMismatch);
     }
-    if !matches!(info.layout, ChannelLayout::Gray | ChannelLayout::Rgb) {
-        return Err(Error::UnsupportedPixelOperation);
-    }
     let mut resize_index = None;
     for (index, step) in steps.iter().enumerate().skip(1) {
         match graph.node(step.node)?.kind {
             NodeKind::Crop { .. } => {}
-            NodeKind::Resize {
-                domain: ResizeDomain::EncodedSamples,
-                ..
-            } if resize_index.is_none() => resize_index = Some(index),
+            NodeKind::Resize { .. } if resize_index.is_none() => resize_index = Some(index),
             _ => return Err(Error::UnsupportedPixelOperation),
         }
     }
@@ -255,11 +325,39 @@ fn prepare_resize(
     if resize.format != info.pixel_format() || resize.semantics != info.semantics() {
         return Err(Error::PixelFormatMismatch);
     }
-    if !matches!(
-        resize.format,
-        PixelFormat::InterleavedU8(1 | 3) | PixelFormat::InterleavedF32(1 | 3)
-    ) {
+    let NodeKind::Resize { domain, .. } = resize.kind else {
         return Err(Error::UnsupportedPixelOperation);
+    };
+    match domain {
+        ResizeDomain::EncodedSamples => {
+            if !matches!(info.layout, ChannelLayout::Gray | ChannelLayout::Rgb)
+                || !matches!(
+                    resize.format,
+                    PixelFormat::InterleavedU8(ChannelLayout::Gray | ChannelLayout::Rgb)
+                        | PixelFormat::InterleavedF32(ChannelLayout::Gray | ChannelLayout::Rgb)
+                )
+            {
+                return Err(Error::UnsupportedPixelOperation);
+            }
+        }
+        ResizeDomain::LinearSrgb => {
+            if !matches!(info.layout, ChannelLayout::Rgb | ChannelLayout::Rgba)
+                || info.sample != SampleType::U8
+            {
+                return Err(Error::UnsupportedPixelOperation);
+            }
+            let expected_alpha = if info.layout == ChannelLayout::Rgba {
+                crate::color::AlphaMode::Straight
+            } else {
+                crate::color::AlphaMode::Opaque
+            };
+            if info.alpha != expected_alpha {
+                return Err(Error::UnsupportedAlphaMode);
+            }
+            if !info.semantics().color.is_unambiguous_srgb() {
+                return Err(Error::UnsupportedColorEncoding);
+            }
+        }
     }
     Ok(PreparedResize {
         source_region: first.region,
@@ -268,6 +366,7 @@ fn prepare_resize(
         input_size: input.size,
         resized_size: resize.size,
         channels: usize::from(info.layout.channels()),
+        domain,
     })
 }
 
