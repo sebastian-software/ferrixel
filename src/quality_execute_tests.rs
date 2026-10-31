@@ -316,13 +316,21 @@ fn deterministic_resampler_property_matrix_preserves_flat_srgb() {
                 .take(width * height * 3)
                 .collect();
             let mut source = RgbSource::new(
-                Size::new(u32::try_from(width).unwrap(), u32::try_from(height).unwrap()).unwrap(),
+                Size::new(
+                    u32::try_from(width).unwrap(),
+                    u32::try_from(height).unwrap(),
+                )
+                .unwrap(),
                 ChannelLayout::Rgb,
                 image,
             );
             let (graph, input, output) = make_graph(
                 &source,
-                Size::new(u32::try_from(new_width).unwrap(), u32::try_from(new_height).unwrap()).unwrap(),
+                Size::new(
+                    u32::try_from(new_width).unwrap(),
+                    u32::try_from(new_height).unwrap(),
+                )
+                .unwrap(),
                 filter,
             );
             let budget = MemoryBudget::new(65_536);
@@ -332,7 +340,13 @@ fn deterministic_resampler_property_matrix_preserves_flat_srgb() {
                 output,
                 input,
                 &mut source,
-                Rect::new(0, 0, u32::try_from(new_width).unwrap(), u32::try_from(new_height).unwrap()).unwrap(),
+                Rect::new(
+                    0,
+                    0,
+                    u32::try_from(new_width).unwrap(),
+                    u32::try_from(new_height).unwrap(),
+                )
+                .unwrap(),
                 &budget,
                 |_, row| {
                     delivered += 1;
