@@ -27,6 +27,17 @@ pub(crate) enum Error {
     IncompleteDecoderOutput,
     NonFinitePixelSample,
     InvalidAlphaValue,
+    #[cfg(feature = "avif-read")]
+    InputPixelLimitExceeded {
+        pixels: u64,
+        limit: u64,
+    },
+    #[cfg(feature = "avif-write")]
+    InvalidEncodeOptions,
+    #[cfg(feature = "avif-write")]
+    IncompleteOutput,
+    #[cfg(feature = "avif-write")]
+    EncodeFailed,
     UnsupportedColorEncoding,
     UnsupportedAlphaMode,
     #[allow(dead_code)]
@@ -72,6 +83,21 @@ impl fmt::Display for Error {
             Self::Cancelled => write!(f, "processing was cancelled by the output sink"),
             Self::DecodeFailed => write!(f, "decoder rejected input or could not render it"),
             Self::NonFinitePixelSample => write!(f, "non-finite sample during resampling"),
+            #[cfg(feature = "avif-write")]
+            Self::InvalidEncodeOptions => {
+                write!(f, "encoder quality/speed or output dimensions are invalid")
+            }
+            #[cfg(feature = "avif-write")]
+            Self::IncompleteOutput => write!(f, "output sink has not received every scanline"),
+            #[cfg(feature = "avif-write")]
+            Self::EncodeFailed => write!(f, "AVIF encoder failed"),
+            #[cfg(feature = "avif-read")]
+            Self::InputPixelLimitExceeded { pixels, limit } => {
+                write!(
+                    f,
+                    "input has {pixels} pixels, exceeding the configured {limit} pixel limit"
+                )
+            }
             Self::InvalidAlphaValue => {
                 write!(f, "straight alpha must be finite and between zero and one")
             }

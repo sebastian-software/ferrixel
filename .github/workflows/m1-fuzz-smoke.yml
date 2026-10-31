@@ -1,0 +1,51 @@
+name: M1 Decoder Fuzz Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/m1-fuzz-smoke.yml"
+      - "fuzz/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: Install AV1 assembler
+        run: sudo apt-get update -qq && sudo apt-get install -y nasm
+      - name: Install pinned fuzz driver
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
+      - name: Prepare real JPEG and JPEG XL corpus seeds
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          target = Path("fuzz/corpus/transcode")
+          target.mkdir(parents=True, exist_ok=True)
+          for fmt, name, selector in [
+              ("jpeg", "tests/fixtures/sample.jpg", b"\x00"),
+              ("jxl", "tests/fixtures/sample.jxl", b"\x01"),
+          ]:
+              (target / f"seed-{fmt}").write_bytes(selector + Path(name).read_bytes())
+          print("Seeded M1 fuzz harness with two checked-in image fixtures")
+          PY
+      - name: Run bounded decoder/processing fuzz smoke
+        run: |
+          cargo +nightly fuzz run transcode -- -runs=3000 -max_len=16384 -timeout=5 -rss_limit_mb=1024
+      - name: Upload reproducible fuzz artifacts if a target crashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-fuzz-artifacts
+          path: |
+            fuzz/artifacts/transcode/
+            fuzz/corpus/transcode/
+          if-no-files-found: ignore

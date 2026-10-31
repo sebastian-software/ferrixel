@@ -7,6 +7,7 @@ use crate::color::{AlphaMode, ImageSemantics};
 use crate::color_contract::LinearSrgbReadiness;
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
+use crate::quality::Filter;
 use crate::surface::{ChannelLayout, ColorMetadata, PixelFormat};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,6 +19,14 @@ pub(crate) enum NodeKind {
     Synthetic,
     Planar10Source,
     DecoderSource,
+    /// The pixel values are transformed to linear-light, premultiplied RGB.
+    ToLinearSrgb {
+        input: NodeId,
+    },
+    /// An explicit quantization / final output color boundary.
+    ToSrgb8 {
+        input: NodeId,
+    },
     Crop {
         input: NodeId,
         rect: Rect,
@@ -35,6 +44,8 @@ pub(crate) enum ResizeDomain {
     /// Reference bilinear filtering in linear sRGB, with straight-alpha
     /// inputs premultiplied *after* transfer decoding and before filtering.
     LinearSrgb,
+    /// Area/Lanczos3 on already-linear, premultiplied samples.
+    WorkingLinear(Filter),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -188,6 +199,107 @@ impl Graph {
             size,
             format: parent.format,
             semantics: parent.semantics.clone(),
+        }))
+    }
+
+    /// Encode a distinct semantic edge: the executor must transform these
+    /// samples; metadata cannot simply be rewritten.
+    pub(crate) fn add_linear_srgb(&mut self, input: NodeId) -> Result<NodeId, Error> {
+        let parent = self.node(input)?;
+        let alpha = match parent.format {
+            PixelFormat::InterleavedU8(ChannelLayout::Rgb)
+            | PixelFormat::InterleavedF32(ChannelLayout::Rgb)
+                if parent.semantics.alpha == AlphaMode::Opaque =>
+            {
+                AlphaMode::Opaque
+            }
+            PixelFormat::InterleavedU8(ChannelLayout::Rgba)
+            | PixelFormat::InterleavedF32(ChannelLayout::Rgba)
+                if parent.semantics.alpha == AlphaMode::Straight =>
+            {
+                AlphaMode::Premultiplied
+            }
+            _ => return Err(Error::UnsupportedPixelOperation),
+        };
+        if !matches!(
+            parent.semantics.color.linear_srgb_readiness(),
+            crate::color_contract::LinearSrgbReadiness::TransferReferenceReady
+                | crate::color_contract::LinearSrgbReadiness::RequiresGamutConversion
+        ) {
+            return Err(Error::UnsupportedColorEncoding);
+        }
+        let format = match parent.format {
+            PixelFormat::InterleavedU8(layout) | PixelFormat::InterleavedF32(layout) => {
+                PixelFormat::InterleavedF32(layout)
+            }
+            _ => return Err(Error::UnsupportedPixelOperation),
+        };
+        Ok(self.push(Node {
+            kind: NodeKind::ToLinearSrgb { input },
+            size: parent.size,
+            format,
+            semantics: ImageSemantics {
+                color: crate::color::ColorEncoding::Cicp([1, 8, 0, 1]),
+                alpha,
+            },
+        }))
+    }
+
+    pub(crate) fn resize_working(
+        &mut self,
+        input: NodeId,
+        size: Size,
+        filter: Filter,
+    ) -> Result<NodeId, Error> {
+        let parent = self.node(input)?;
+        if !matches!(
+            parent.format,
+            PixelFormat::InterleavedF32(ChannelLayout::Rgb | ChannelLayout::Rgba)
+        ) || parent.semantics.color != crate::color::ColorEncoding::Cicp([1, 8, 0, 1])
+        {
+            return Err(Error::UnsupportedPixelOperation);
+        }
+        Ok(self.push(Node {
+            kind: NodeKind::Resize {
+                input,
+                domain: ResizeDomain::WorkingLinear(filter),
+            },
+            size,
+            format: parent.format,
+            semantics: parent.semantics.clone(),
+        }))
+    }
+
+    pub(crate) fn add_srgb8(&mut self, input: NodeId) -> Result<NodeId, Error> {
+        let parent = self.node(input)?;
+        let format = match parent.format {
+            PixelFormat::InterleavedF32(ChannelLayout::Rgb)
+                if parent.semantics.alpha == AlphaMode::Opaque =>
+            {
+                PixelFormat::InterleavedU8(ChannelLayout::Rgb)
+            }
+            PixelFormat::InterleavedF32(ChannelLayout::Rgba)
+                if parent.semantics.alpha == AlphaMode::Premultiplied =>
+            {
+                PixelFormat::InterleavedU8(ChannelLayout::Rgba)
+            }
+            _ => return Err(Error::UnsupportedPixelOperation),
+        };
+        if parent.semantics.color != crate::color::ColorEncoding::Cicp([1, 8, 0, 1]) {
+            return Err(Error::UnsupportedColorEncoding);
+        }
+        Ok(self.push(Node {
+            kind: NodeKind::ToSrgb8 { input },
+            size: parent.size,
+            format,
+            semantics: ImageSemantics {
+                color: crate::color::ColorEncoding::Cicp([1, 13, 0, 1]),
+                alpha: if matches!(format, PixelFormat::InterleavedU8(ChannelLayout::Rgb)) {
+                    AlphaMode::Opaque
+                } else {
+                    AlphaMode::Straight
+                },
+            },
         }))
     }
 

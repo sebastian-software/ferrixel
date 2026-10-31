@@ -2,7 +2,7 @@
 name = "ferrixel"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.94"
+rust-version = "1.98"
 authors = ["Sebastian Software GmbH"]
 description = "Experimental pipeline-first Rust image processing engine"
 repository = "https://github.com/sebastian-software/ferrixel"
@@ -14,8 +14,17 @@ publish = false
 default = []
 jpeg-read = ["dep:zune-jpeg"]
 jpeg-xl-read = ["dep:jxl-oxide"]
+avif-write = ["dep:ravif"]
+avif-read = ["dep:avif-decode", "dep:avif-parse"]
+icc = ["dep:moxcms"]
+cli = ["jpeg-read", "jpeg-xl-read", "avif-read", "avif-write", "icc"]
+
 
 [dependencies]
+ravif = { version = "0.13.0", optional = true, default-features = false }
+avif-decode = { version = "3.0.0", optional = true, default-features = false }
+avif-parse = { version = "2.1.0", optional = true }
+moxcms = { version = "0.9.1", optional = true }
 zune-jpeg = { version = "0.5.15", optional = true, default-features = false, features = ["std"] }
 jxl-oxide = { version = "0.12.6", optional = true, default-features = false }
 
@@ -25,3 +34,8 @@ unsafe_code = "forbid"
 [lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
+
+[[bin]]
+name = "ferrixel"
+path = "src/bin/ferrixel.rs"
+required-features = ["cli"]

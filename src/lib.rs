@@ -11,6 +11,10 @@
 // public API. Remove this allowance when the first supported API lands.
 #![cfg_attr(not(test), allow(dead_code))]
 
+#[cfg(feature = "avif-write")]
+mod avif_sink;
+#[cfg(feature = "icc")]
+mod cms;
 mod codecs;
 mod color;
 mod color_contract;
@@ -22,8 +26,12 @@ mod geometry;
 mod graph;
 mod linear_srgb;
 mod memory;
+#[cfg(feature = "avif-write")]
+pub mod pipeline;
 mod plan;
 mod planar;
+mod quality;
+mod quality_execute;
 mod surface;
 mod working_color;
 
@@ -32,6 +40,12 @@ mod tests;
 
 #[cfg(test)]
 mod planar_tests;
+
+#[cfg(test)]
+mod quality_tests;
+
+#[cfg(test)]
+mod quality_execute_tests;
 
 #[cfg(test)]
 mod decoder_tests;
@@ -47,3 +61,12 @@ mod working_color_tests;
 
 #[cfg(test)]
 mod color_contract_tests;
+
+#[cfg(all(test, feature = "avif-write"))]
+mod avif_sink_tests;
+
+#[cfg(all(test, feature = "jpeg-read", feature = "avif-write"))]
+mod pipeline_tests;
+
+#[cfg(test)]
+mod hardening_tests;

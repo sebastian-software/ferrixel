@@ -130,3 +130,19 @@ pub(crate) fn decode_straight_to_premultiplied_linear_srgb(
         alpha,
     })
 }
+
+/// The final *explicit* SDR output gamut-mapping and transfer boundary.
+/// Intermediate working values may lie outside [0, 1], but AVIF sRGB8 cannot.
+pub(crate) fn encode_linear_srgb8(linear: f64) -> Result<u8, Error> {
+    if !linear.is_finite() {
+        return Err(Error::NonFinitePixelSample);
+    }
+    let linear = linear.clamp(0.0, 1.0);
+    let encoded = if linear <= 0.003_130_8 {
+        12.92 * linear
+    } else {
+        1.055 * linear.powf(1.0 / 2.4) - 0.055
+    };
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    Ok((encoded * 255.0).round() as u8)
+}

@@ -1,6 +1,6 @@
 # M1 — First complete image pipeline
 
-- **Status:** Planned
+- **Status:** Implementation under validation; release-candidate gates open
 - **Created:** 2026-10-31
 - **Audience:** Ferrixel maintainers and contributors
 - **Horizon:** The next coherent product milestone, not a date-driven release commitment
@@ -82,3 +82,7 @@ Neither phase is a prerequisite for the first actually useful image pipeline.
 ## Progress note — first working-color reference
 
 A small, dependency-free `src/working_color.rs` reference experiment covers SDR sRGB and Display P3 transfer/gamut arithmetic and premultiplied straight alpha. It validates the math for work package 1, **not** the entire graph/region transform, ICC conversion or M1 exit criteria. See [ADR-0016](../adr/0016-working-color-space-and-transform-boundaries.md). Work package 1 stays open until the color-domain contract is expressible and executable through the actual planner.
+
+## M1 implementation evidence
+
+The experimental pipeline has landed on the feature branch in individually themed commits. See [M1 evidence and remaining gates](M1-evidence-and-gates.md) for the current check results, known architecture risks, reproducibility and the distinction between a passing CI matrix and M1 release acceptance. This plan is not a claim that its ten steps have all passed their quality exit criteria.

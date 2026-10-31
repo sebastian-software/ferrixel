@@ -65,3 +65,11 @@ Real codec and encoder dataflow makes the proposed format contract too expensive
 ## 2026-10-31: narrow reference experiment (not acceptance)
 
 A dependency-free scalar `src/working_color.rs` proof now decodes tagged sRGB or Display P3 (D65, sRGB transfer) samples into unclipped linear sRGB triples using the W3C CSS Color 4 rational reference matrices. A separate helper converts explicitly straight alpha into linear-light premultiplied samples. These values are not tied to a graph, decoder or full-frame buffer; ICC and PQ/HLG still fail closed. Independent unit fixtures verify D65 neutral preservation, a known out-of-gamut P3 red, extended signed transfer, alpha and profile rejection. **This does not yet implement the proposed composable graph transform or an encoder-ready color-managed path.** The ADR remains Proposed until real source and sink integration is proven.
+
+## 2026-10-31: pipeline implementation, still under review
+
+PR #11 experimentally connects `ToLinearSrgb → WorkingLinear(Area/Lanczos3) → ToSrgb8` with real decoder rows and an explicit AVIF frame-materialization sink. The scalar reference preserves out-of-gamut intermediate colors and alpha association until final output quantization. A contract test uncovered **nonmonotonic minimum input indices at exact Lanczos zero crossings**, requiring the scanline cache to retain any row needed by *any remaining* output row. No general planner optimization, unlimited-memory guarantee, full orientation handling or arbitrary profile conversion is implied. The ADR stays **Proposed** pending independent quality and resource validation.
+
+### Region footprint correction
+
+Differential testing exposed that the minimum *nonzero* tap of Lanczos3 can move backward at exact sinc zero crossings. Besides delaying row-cache eviction, the region planner must take the union of **every output sample's** filter support, not assume that the first and last output points bound all interior taps. The current reference planner now does so. For large regions, the O(number of output positions) planning overhead is an explicit optimization opportunity; a future analytical conservative bound must prove it contains the reference tap union.

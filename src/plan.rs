@@ -7,7 +7,8 @@
 
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
-use crate::graph::{Graph, NodeId, NodeKind};
+use crate::graph::{Graph, NodeId, NodeKind, ResizeDomain};
+use crate::quality::footprint;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Step {
@@ -37,12 +38,34 @@ pub(crate) fn plan_region(
         });
         match node.kind {
             NodeKind::Synthetic | NodeKind::Planar10Source | NodeKind::DecoderSource => break,
+            NodeKind::ToLinearSrgb { input } | NodeKind::ToSrgb8 { input } => {
+                current = input;
+            }
             NodeKind::Crop { input, rect } => {
                 region = region.translate(rect.x, rect.y)?;
                 current = input;
             }
-            NodeKind::Resize { input, .. } => {
-                region = bilinear_footprint(region, graph.node(input)?.size, node.size)?;
+            NodeKind::Resize { input, domain } => {
+                region = if let ResizeDomain::WorkingLinear(filter) = domain {
+                    let source = graph.node(input)?.size;
+                    let (x, width) = footprint(
+                        source.width,
+                        node.size.width,
+                        region.x,
+                        region.width,
+                        filter,
+                    )?;
+                    let (y, height) = footprint(
+                        source.height,
+                        node.size.height,
+                        region.y,
+                        region.height,
+                        filter,
+                    )?;
+                    Rect::new(x, y, width, height)?
+                } else {
+                    bilinear_footprint(region, graph.node(input)?.size, node.size)?
+                };
                 current = input;
             }
         }

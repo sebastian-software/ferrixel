@@ -113,7 +113,10 @@ fn execute_planned_region(
             report.full_frame_intermediates += 1;
         }
         let next = match node.kind {
-            NodeKind::Planar10Source | NodeKind::DecoderSource => {
+            NodeKind::Planar10Source
+            | NodeKind::DecoderSource
+            | NodeKind::ToLinearSrgb { .. }
+            | NodeKind::ToSrgb8 { .. } => {
                 return Err(Error::PixelFormatMismatch);
             }
             NodeKind::Synthetic => {

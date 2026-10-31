@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   rust:
@@ -12,6 +17,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Install AV1 assembler for optional rav1d backend
+        run: sudo apt-get update -qq && sudo apt-get install -y nasm
       - name: Format
         run: cargo fmt --all --check
       - name: Test core without codecs
@@ -22,3 +29,29 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: Lint with optional codecs
         run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Check individually enabled features
+        run: |
+          for feature in jpeg-read jpeg-xl-read avif-read avif-write icc cli; do
+            cargo check --no-default-features --features "$feature"
+          done
+      - name: Verify license metadata expression policy
+        run: python3 scripts/test_audit_licenses.py
+      - name: Screen transitive license metadata
+        run: python3 scripts/audit-licenses.py
+      - name: Attach the resolved dependency inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-license-metadata
+          path: target/m1-license-inventory.csv
+          if-no-files-found: ignore
+
+  minimum-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.98.0
+      - name: Install AV1 assembler
+        run: sudo apt-get update -qq && sudo apt-get install -y nasm
+      - name: Check all feature combinations on declared MSRV
+        run: cargo check --all-features
