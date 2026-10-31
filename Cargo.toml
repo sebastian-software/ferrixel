@@ -2,7 +2,7 @@
 name = "ferrixel"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.94"
+rust-version = "1.98"
 authors = ["Sebastian Software GmbH"]
 description = "Experimental pipeline-first Rust image processing engine"
 repository = "https://github.com/sebastian-software/ferrixel"
@@ -15,10 +15,12 @@ default = []
 jpeg-read = ["dep:zune-jpeg"]
 jpeg-xl-read = ["dep:jxl-oxide"]
 avif-write = ["dep:ravif"]
+avif-read = ["dep:avif-decode"]
 
 
 [dependencies]
 ravif = { version = "0.13.0", optional = true, default-features = false }
+avif-decode = { version = "3.0.0", optional = true, default-features = false }
 zune-jpeg = { version = "0.5.15", optional = true, default-features = false, features = ["std"] }
 jxl-oxide = { version = "0.12.6", optional = true, default-features = false }
 
