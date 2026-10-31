@@ -136,7 +136,8 @@ pub(crate) fn execute(
                             let top_right = f64::from(source.get(sx.upper, sy.lower));
                             let bottom_left = f64::from(source.get(sx.lower, sy.upper));
                             let bottom_right = f64::from(source.get(sx.upper, sy.upper));
-                            let horizontal_top = top_left + (top_right - top_left) * sx.upper_weight;
+                            let horizontal_top =
+                                top_left + (top_right - top_left) * sx.upper_weight;
                             let horizontal_bottom =
                                 bottom_left + (bottom_right - bottom_left) * sx.upper_weight;
                             *pixel = quantize_gray8(
