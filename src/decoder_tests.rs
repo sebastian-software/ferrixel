@@ -95,7 +95,7 @@ fn source_binding_and_cancellation_are_checked() {
         .decoded_source(source.info.size, source.info.pixel_format(), source.info.semantics())
         .unwrap();
     let wrong = graph
-        .decoded_source(Size::new(2, 2).unwrap(), source.info.pixel_format(), 2).unwrap(), source.info.semantics())
+        .decoded_source(Size::new(2, 2).unwrap(), source.info.pixel_format(), source.info.semantics())
         .unwrap();
     assert_eq!(
         execute_decoded(
