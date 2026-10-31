@@ -37,3 +37,7 @@ Current JPEG may have no applicable CICP and JPEG XL currently emits F32, so thi
 ## Tests
 
 The `linear_srgb_tests` module covers encoded vs linear black/white mixing, invisible-color isolation, all-transparent pixels, 2D mixing, profile conflicts and unsupported transfers, alpha association requirements, memory budget failure, and cancellation. The existing optional JPEG and JPEG XL tests continue to exercise the sample-domain path.
+
+## Pixel format identity
+
+A failed contract test revealed that `InterleavedU8(4)` did not distinguish RGBA from CMYK. The pixel format now includes the semantic `ChannelLayout` rather than a bare channel count. A four-channel CMYK surface is rejected even if its caller incorrectly claims straight alpha and an sRGB CICP tag. This is why the reference tests check semantic compatibility, not only data length.

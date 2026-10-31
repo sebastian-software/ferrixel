@@ -61,3 +61,7 @@ Real adapters require substantially different contracts or the model forces unne
 ## 2026-10-31: reference color-fidelity boundary
 
 [ADR-0014](0014-linear-srgb-straight-alpha.md) demonstrates an opt-in linear-light bilinear path for **unambiguous CICP sRGB RGB8 and straight RGBA8**. No other metadata can be implicitly converted, and the existing more general color-management decision remains Proposed. The experiment establishes a baseline for alpha-safe and transfer-aware processing, not complete ICC, HDR, or native YUV pipeline negotiation.
+
+### Channel identity as part of sample layout
+
+The sRGB-alpha experiment exposed a concrete architectural ambiguity: `InterleavedU8(4)` cannot distinguish RGBA from CMYK. The core now retains the `ChannelLayout` identity in each interleaved `PixelFormat`, and the explicit color reference only accepts `Rgb`/`Rgba`. This does not yet resolve wider color profile conversion or planar sample meaning; this ADR remains Proposed.

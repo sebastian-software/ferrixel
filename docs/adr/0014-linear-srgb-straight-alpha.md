@@ -18,7 +18,7 @@ Provide a separate, opt-in **LinearSrgb** resize domain in the semantic graph, a
 
 For the initial reference path, accept only:
 
-- Interleaved **RGB8 + Opaque** or **RGBA8 + explicitly Straight** alpha.
+- Interleaved **RGB8 + Opaque** or **RGBA8 + explicitly Straight** alpha, with channel layout identity preserved in `PixelFormat` (RGBA and CMYK are not interchangeable even though both have four channels).
 - A sole, unambiguous CICP descriptor **[1, 13, 0, 1]** (BT.709/sRGB primaries, IEC 61966-2-1 transfer, RGB matrix, full range).
 - No competing ICC profile. Presence of ICC is **not** proof of sRGB, even when a CICP hint also exists.
 
@@ -57,3 +57,4 @@ An ICC color-management engine becomes available; real codecs can provide truste
 ## Amendment log
 
 - 2026-10-31 — Introduced strict, opt-in linear-sRGB bilinear reference with correct straight-alpha handling.
+- 2026-10-31 — Test-driven correction: retain channel meaning in `PixelFormat` rather than equating RGBA and CMYK by channel count.

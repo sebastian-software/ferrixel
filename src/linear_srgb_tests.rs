@@ -333,7 +333,12 @@ fn unsupported_layouts_and_precision_are_not_silently_converted() {
     }
     // Even a forged alpha declaration and a nominal sRGB tag cannot make
     // CMYK's four channels semantically equivalent to RGBA.
-    let source = RawSource::new(size(2, 1), ChannelLayout::Cmyk, AlphaMode::Straight, vec![0; 8]);
+    let source = RawSource::new(
+        size(2, 1),
+        ChannelLayout::Cmyk,
+        AlphaMode::Straight,
+        vec![0; 8],
+    );
     let mut graph = Graph::new();
     let cmyk = source.bind(&mut graph);
     assert_eq!(
