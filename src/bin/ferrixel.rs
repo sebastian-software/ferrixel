@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .ok_or("memory budget overflow")?;
             }
             option if option.starts_with("--crop=") => {
-                options.crop = Some(parse_crop(&option[7..])?)
+                options.crop = Some(parse_crop(&option[7..])?);
             }
             _ => return Err(format!("unknown option: {option}").into()),
         }
