@@ -15,7 +15,7 @@ default = []
 jpeg-read = ["dep:zune-jpeg"]
 jpeg-xl-read = ["dep:jxl-oxide"]
 avif-write = ["dep:ravif"]
-avif-read = ["dep:avif-decode"]
+avif-read = ["dep:avif-decode", "dep:avif-parse"]
 icc = ["dep:moxcms"]
 cli = ["jpeg-read", "jpeg-xl-read", "avif-read", "avif-write", "icc"]
 
@@ -23,6 +23,7 @@ cli = ["jpeg-read", "jpeg-xl-read", "avif-read", "avif-write", "icc"]
 [dependencies]
 ravif = { version = "0.13.0", optional = true, default-features = false }
 avif-decode = { version = "3.0.0", optional = true, default-features = false }
+avif-parse = { version = "2.1.0", optional = true }
 moxcms = { version = "0.9.1", optional = true }
 zune-jpeg = { version = "0.5.15", optional = true, default-features = false, features = ["std"] }
 jxl-oxide = { version = "0.12.6", optional = true, default-features = false }

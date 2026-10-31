@@ -21,7 +21,26 @@ pub(crate) struct AvifSource {
     info: DecoderInfo,
 }
 impl AvifSource {
-    pub(crate) fn new(bytes: &[u8]) -> Result<Self, Error> {
+    /// An upper bound on coded frame dimensions is checked *before* the
+    /// decoder allocates a full pixel surface. This is not an RSS limit:
+    /// parsing and decoding can still allocate opaque codec memory.
+    pub(crate) fn new_bounded(bytes: &[u8], max_pixels: u64) -> Result<Self, Error> {
+        let mut reader = bytes;
+        let parsed = avif_parse::AvifData::from_reader(&mut reader)
+            .map_err(|_| Error::DecodeFailed)?;
+        let metadata = parsed.primary_item_metadata().map_err(|_| Error::DecodeFailed)?;
+        let coded_pixels = u64::from(metadata.max_frame_width.get())
+            .checked_mul(u64::from(metadata.max_frame_height.get()))
+            .ok_or(Error::GeometryOverflow)?;
+        if coded_pixels > max_pixels {
+            return Err(Error::InputPixelLimitExceeded {
+                pixels: coded_pixels,
+                limit: max_pixels,
+            });
+        }
+        // Parsing above holds compressed AV1 data temporarily; drop it before
+        // decoding. The downstream decoder currently parses the AVIF again.
+        drop(parsed);
         let image = Decoder::from_avif(bytes)
             .map_err(|_| Error::DecodeFailed)?
             .to_image()
@@ -37,6 +56,13 @@ impl AvifSource {
             u32::try_from(width).map_err(|_| Error::GeometryOverflow)?,
             u32::try_from(height).map_err(|_| Error::GeometryOverflow)?,
         )?;
+        let rendered_pixels = u64::from(size.width) * u64::from(size.height);
+        if rendered_pixels > max_pixels {
+            return Err(Error::InputPixelLimitExceeded {
+                pixels: rendered_pixels,
+                limit: max_pixels,
+            });
+        }
         let info = DecoderInfo {
             size,
             layout,
@@ -57,6 +83,10 @@ impl AvifSource {
             rendered_cicp: None,
         };
         Ok(Self { image, info })
+    }
+
+    pub(crate) fn new(bytes: &[u8]) -> Result<Self, Error> {
+        Self::new_bounded(bytes, 100_000_000)
     }
 }
 
