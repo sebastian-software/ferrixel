@@ -19,7 +19,6 @@ mod error;
 mod execute;
 mod geometry;
 mod graph;
-mod linear_srgb;
 mod memory;
 mod plan;
 mod planar;
@@ -36,3 +35,6 @@ mod decoder_tests;
 
 #[cfg(test)]
 mod decoded_resize_tests;
+
+#[cfg(test)]
+mod linear_srgb_tests;
