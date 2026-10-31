@@ -83,3 +83,27 @@ fn jpeg_xl_icc_can_be_explicitly_transformed_and_encoded() {
     assert_eq!(image.report.decoder_requests, 1);
     assert_eq!(image.report.engine_full_frame_intermediates, 0);
 }
+
+#[test]
+fn compressed_bytes_and_decoded_pixel_caps_reject_before_processing() {
+    let jpeg = include_bytes!("../tests/fixtures/sample.jpg");
+    let options = TransformOptions {
+        output_width: 1,
+        output_height: 1,
+        profile_policy: InputProfilePolicy::AssumeSrgbIfMissing,
+        speed: 10,
+        ..TransformOptions::default()
+    };
+    assert!(transcode(
+        jpeg, ImageFormat::Jpeg,
+        TransformOptions { max_input_bytes: 1, ..options },
+    ).is_err());
+    assert!(transcode(
+        jpeg, ImageFormat::Jpeg,
+        TransformOptions { max_input_pixels: 1, ..options },
+    ).is_err());
+    assert!(transcode(
+        jpeg, ImageFormat::Jpeg,
+        TransformOptions { max_input_pixels: 0, ..options },
+    ).is_err());
+}

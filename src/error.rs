@@ -27,6 +27,7 @@ pub(crate) enum Error {
     IncompleteDecoderOutput,
     NonFinitePixelSample,
     InvalidAlphaValue,
+    #[cfg(feature = "avif-read")]
     InputPixelLimitExceeded { pixels: u64, limit: u64 },
     #[cfg(feature = "avif-write")]
     InvalidEncodeOptions,
@@ -87,6 +88,7 @@ impl fmt::Display for Error {
             Self::IncompleteOutput => write!(f, "output sink has not received every scanline"),
             #[cfg(feature = "avif-write")]
             Self::EncodeFailed => write!(f, "AVIF encoder failed"),
+            #[cfg(feature = "avif-read")]
             Self::InputPixelLimitExceeded { pixels, limit } => {
                 write!(f, "input has {pixels} pixels, exceeding the configured {limit} pixel limit")
             }

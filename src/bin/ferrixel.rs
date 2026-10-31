@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 5 {
         eprintln!(
-            "usage: ferrixel input.jpg output.avif WIDTH HEIGHT [--assume-srgb|--use-rendered-icc] [--area] [--quality=75] [--speed=6] [--budget-mb=256] [--crop=x,y,w,h]"
+            "usage: ferrixel input.jpg output.avif WIDTH HEIGHT [--assume-srgb|--use-rendered-icc] [--area] [--quality=75] [--speed=6] [--budget-mb=256] [--max-input-mb=64] [--max-input-mpx=100] [--crop=x,y,w,h]"
         );
         std::process::exit(2);
     }
@@ -65,6 +65,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 options.max_managed_bytes = megabytes
                     .checked_mul(1024 * 1024)
                     .ok_or("memory budget overflow")?;
+            }
+            option if option.starts_with("--max-input-mb=") => {
+                let megabytes: usize = option[15..].parse()?;
+                options.max_input_bytes = megabytes.checked_mul(1024 * 1024)
+                    .ok_or("compressed input limit overflow")?;
+            }
+            option if option.starts_with("--max-input-mpx=") => {
+                let megapixels: u64 = option[16..].parse()?;
+                options.max_input_pixels = megapixels.checked_mul(1_000_000)
+                    .ok_or("decoded pixel limit overflow")?;
             }
             option if option.starts_with("--crop=") => {
                 options.crop = Some(parse_crop(&option[7..])?);
