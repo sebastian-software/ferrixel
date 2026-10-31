@@ -31,6 +31,7 @@ Every ADR contains **Status**, **Date**, **Last reviewed**, **Context**, **Decis
 | [0013](0013-sample-domain-resize.md) | Preserve rendered metadata and validate sample-domain codec resize | Experimental |
 | [0014](0014-linear-srgb-straight-alpha.md) | Explicit sRGB linear-light resize and premultiplied filtering | Experimental |
 | [0015](0015-typed-output-color-signals.md) | Inspect CICP and ICC output evidence; describe required conversions | Experimental |
+| [0016](0016-working-color-space-and-transform-boundaries.md) | Region-capable working-color transform and output semantics | Proposed |
 
 ## Changing an ADR
 
