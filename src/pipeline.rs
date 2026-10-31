@@ -102,7 +102,9 @@ pub struct ProcessingError {
 }
 impl ProcessingError {
     fn new(message: impl Into<String>) -> Self {
-        Self { message: message.into() }
+        Self {
+            message: message.into(),
+        }
     }
 }
 impl fmt::Display for ProcessingError {
@@ -159,7 +161,9 @@ fn open_source<'a>(
             #[cfg(not(feature = "jpeg-xl-read"))]
             {
                 let _ = bytes;
-                Err(ProcessingError::new("enable the jpeg-xl-read Cargo feature"))
+                Err(ProcessingError::new(
+                    "enable the jpeg-xl-read Cargo feature",
+                ))
             }
         }
         ImageFormat::Avif => {
@@ -190,7 +194,11 @@ pub fn transcode(
     format: ImageFormat,
     options: TransformOptions,
 ) -> Result<Output, ProcessingError> {
-    EncodeSettings { quality: options.quality, speed: options.speed }.validate()?;
+    EncodeSettings {
+        quality: options.quality,
+        speed: options.speed,
+    }
+    .validate()?;
     let target_size = Size::new(options.output_width, options.output_height)?;
     let source = open_source(encoded, format)?;
     let mut actual: Box<dyn DecodeSource + '_> = if source.info().rendered_icc.is_none()
@@ -199,7 +207,10 @@ pub fn transcode(
     {
         let mut info = source.info().clone();
         info.rendered_cicp = Some([1, 13, 0, 1]);
-        Box::new(ExplicitSrgb { decoder: source, info })
+        Box::new(ExplicitSrgb {
+            decoder: source,
+            info,
+        })
     } else {
         source
     };
@@ -208,7 +219,7 @@ pub fn transcode(
         ColorEncoding::Cicp([1, 13, 0, 1] | [12, 13, 0, 1])
     ) {
         return Err(ProcessingError::new(
-            "unsupported or ambiguous rendered color profile; a color-management transform is required"
+            "unsupported or ambiguous rendered color profile; a color-management transform is required",
         ));
     }
     let size = actual.info().size;
@@ -222,7 +233,11 @@ pub fn transcode(
     }
 
     let mut graph = Graph::new();
-    let input = graph.decoded_source(size, actual.info().pixel_format(), actual.info().semantics())?;
+    let input = graph.decoded_source(
+        size,
+        actual.info().pixel_format(),
+        actual.info().semantics(),
+    )?;
     let cropped = graph.crop(input, crop)?;
     let linear = graph.add_linear_srgb(cropped)?;
     let resized = graph.resize_working(linear, target_size, options.filter)?;

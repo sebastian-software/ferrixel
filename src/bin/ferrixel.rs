@@ -9,8 +9,11 @@ use ferrixel::pipeline::{
 };
 
 fn parse_format(path: &Path) -> Result<ImageFormat, Box<dyn Error>> {
-    let extension = path.extension().and_then(|ext| ext.to_str())
-        .unwrap_or_default().to_ascii_lowercase();
+    let extension = path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
     match extension.as_str() {
         "jpg" | "jpeg" => Ok(ImageFormat::Jpeg),
         "jxl" => Ok(ImageFormat::JpegXl),
@@ -35,7 +38,9 @@ fn parse_crop(value: &str) -> Result<Crop, Box<dyn Error>> {
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 5 {
-        eprintln!("usage: ferrixel input.jpg output.avif WIDTH HEIGHT [--assume-srgb] [--area] [--quality=75] [--speed=6] [--budget-mb=256] [--crop=x,y,w,h]");
+        eprintln!(
+            "usage: ferrixel input.jpg output.avif WIDTH HEIGHT [--assume-srgb] [--area] [--quality=75] [--speed=6] [--budget-mb=256] [--crop=x,y,w,h]"
+        );
         std::process::exit(2);
     }
     let input_path = Path::new(&args[1]);
@@ -56,10 +61,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             option if option.starts_with("--speed=") => options.speed = option[8..].parse()?,
             option if option.starts_with("--budget-mb=") => {
                 let megabytes: usize = option[12..].parse()?;
-                options.max_managed_bytes = megabytes.checked_mul(1024 * 1024)
+                options.max_managed_bytes = megabytes
+                    .checked_mul(1024 * 1024)
                     .ok_or("memory budget overflow")?;
             }
-            option if option.starts_with("--crop=") => options.crop = Some(parse_crop(&option[7..])?),
+            option if option.starts_with("--crop=") => {
+                options.crop = Some(parse_crop(&option[7..])?)
+            }
             _ => return Err(format!("unknown option: {option}").into()),
         }
     }
@@ -77,7 +85,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         output.report.encoder_output_frame_bytes,
     );
     if output.report.opaque_decoder_memory || output.report.opaque_encoder_memory {
-        eprintln!("Note: decoder and/or encoder internal allocations are not subject to this memory budget.");
+        eprintln!(
+            "Note: decoder and/or encoder internal allocations are not subject to this memory budget."
+        );
     }
     Ok(())
 }

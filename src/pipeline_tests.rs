@@ -1,7 +1,5 @@
 #![cfg(all(feature = "jpeg-read", feature = "avif-write"))]
-use crate::pipeline::{
-    ImageFormat, InputProfilePolicy, ResizeFilter, TransformOptions, transcode,
-};
+use crate::pipeline::{ImageFormat, InputProfilePolicy, ResizeFilter, TransformOptions, transcode};
 
 #[test]
 fn real_jpeg_reaches_valid_avif_bytes_through_m1_graph() {
@@ -50,8 +48,16 @@ fn produced_avif_is_accepted_by_an_independent_decoder() {
         speed: 9,
         ..TransformOptions::default()
     };
-    let encoded = transcode(include_bytes!("../tests/fixtures/sample.jpg"), ImageFormat::Jpeg, options).unwrap();
+    let encoded = transcode(
+        include_bytes!("../tests/fixtures/sample.jpg"),
+        ImageFormat::Jpeg,
+        options,
+    )
+    .unwrap();
     let decoded = AvifSource::new(&encoded.avif_bytes).unwrap();
-    assert_eq!(decoded.info().size, crate::geometry::Size::new(4, 3).unwrap());
+    assert_eq!(
+        decoded.info().size,
+        crate::geometry::Size::new(4, 3).unwrap()
+    );
     assert_eq!(decoded.info().layout.channels(), 3);
 }

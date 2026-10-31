@@ -145,7 +145,11 @@ impl DecodeSource for AvifSource {
             output_sample_bytes: u64::from(region.width)
                 * u64::from(region.height)
                 * channels as u64
-                * if self.info.sample == SampleType::F32 { 4 } else { 1 },
+                * if self.info.sample == SampleType::F32 {
+                    4
+                } else {
+                    1
+                },
             known_full_frame_buffers: 1,
             peak_engine_managed_bytes: budget.snapshot().peak,
             opaque_codec_memory_unbounded: true,
