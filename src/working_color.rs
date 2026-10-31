@@ -7,7 +7,7 @@
 //!
 //! The exact D65 matrices are the rational reference coefficients from
 //! W3C CSS Color 4 §19 (sRGB / Display P3 -> XYZ D65 and back):
-//! https://www.w3.org/TR/css-color-4/#color-conversion-code
+//! <https://www.w3.org/TR/css-color-4/#color-conversion-code>
 //! Both color spaces use the sRGB transfer function, but *not* the same
 //! primaries. No chromatic adaptation is needed because both use D65.
 
@@ -65,27 +65,27 @@ fn transform(matrix: [[f64; 3]; 3], rgb: [f64; 3]) -> [f64; 3] {
 /// The W3C CSS Color 4 Display P3 (D65) to CIE XYZ D65 reference matrix.
 const P3_TO_XYZ_D65: [[f64; 3]; 3] = [
     [
-        608311.0 / 1250200.0,
-        189793.0 / 714400.0,
-        198249.0 / 1000160.0,
+        608_311.0 / 1_250_200.0,
+        189_793.0 / 714_400.0,
+        198_249.0 / 1_000_160.0,
     ],
     [
-        35783.0 / 156275.0,
-        247089.0 / 357200.0,
-        198249.0 / 2500400.0,
+        35_783.0 / 156_275.0,
+        247_089.0 / 357_200.0,
+        198_249.0 / 2_500_400.0,
     ],
-    [0.0, 32229.0 / 714400.0, 5220557.0 / 5000800.0],
+    [0.0, 32_229.0 / 714_400.0, 5_220_557.0 / 5_000_800.0],
 ];
 
 /// The W3C CSS Color 4 CIE XYZ D65 to linear sRGB reference matrix.
 const XYZ_D65_TO_SRGB: [[f64; 3]; 3] = [
-    [12831.0 / 3959.0, -329.0 / 214.0, -1974.0 / 3959.0],
+    [12_831.0 / 3959.0, -329.0 / 214.0, -1974.0 / 3959.0],
     [
-        -851781.0 / 878810.0,
-        1648619.0 / 878810.0,
-        36519.0 / 878810.0,
+        -851_781.0 / 878_810.0,
+        1_648_619.0 / 878_810.0,
+        36_519.0 / 878_810.0,
     ],
-    [705.0 / 12673.0, -2585.0 / 12673.0, 705.0 / 667.0],
+    [705.0 / 12_673.0, -2585.0 / 12_673.0, 705.0 / 667.0],
 ];
 
 /// Decode a *trusted* SDR color signal into unclipped, linear-light sRGB.
