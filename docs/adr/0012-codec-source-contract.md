@@ -53,7 +53,7 @@ Both selected adapters are permissively licensed. Do not integrate AGPL/commerci
 
 ## Validation
 
-Exercise real small JPEG and JPEG XL fixtures, invalid input, region geometry, row typing, source binding, early cancellation and budget failures in feature-gated tests. CI must test the no-codec configuration and both optional codec adapters. Inspect codec and dependency licenses separately.
+Exercise real small JPEG and JPEG XL fixtures, invalid input, region geometry, row typing, source binding, early cancellation and budget failures in feature-gated tests. Compare cropped pixels against full-frame decodes, with a documented numerical tolerance for floating-point output. CI must test the no-codec configuration and both optional codec adapters. Inspect codec and dependency licenses separately.
 
 Before promotion to Accepted: validate actual codec work avoided, orientation/ICC/CMYK/HDR handling, adversarial dimensions and malformed files, memory usage inside decoders, output fidelity and a format-independent transform path.
 

@@ -14,7 +14,11 @@ jobs:
           components: rustfmt, clippy
       - name: Format
         run: cargo fmt --all --check
-      - name: Test
+      - name: Test core without codecs
+        run: cargo test --all-targets
+      - name: Test with optional codecs
         run: cargo test --all-targets --all-features
-      - name: Lint
+      - name: Lint core without codecs
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Lint with optional codecs
         run: cargo clippy --all-targets --all-features -- -D warnings

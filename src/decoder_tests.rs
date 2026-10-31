@@ -223,3 +223,71 @@ fn jpeg_xl_requests_codec_region_and_delivers_float_scanlines() {
         Err(Error::DecodeFailed)
     ));
 }
+
+#[cfg(feature = "jpeg-read")]
+#[test]
+fn jpeg_cropped_samples_match_full_decoded_output() {
+    use crate::codecs::jpeg::JpegSource;
+    let bytes = include_bytes!("../tests/fixtures/sample.jpg");
+    let mut source = JpegSource::new(bytes).unwrap();
+    let mut full = Vec::new();
+    source
+        .read_region(rect(0, 0, 7, 5), &MemoryBudget::new(105), &mut |_, row| {
+            let DecodedRow::U8(data) = row else {
+                panic!("JPEG must deliver RGB8");
+            };
+            full.extend_from_slice(data);
+            Ok(())
+        })
+        .unwrap();
+    let mut crop = Vec::new();
+    source
+        .read_region(rect(2, 1, 3, 2), &MemoryBudget::new(105), &mut |_, row| {
+            let DecodedRow::U8(data) = row else {
+                panic!("JPEG must deliver RGB8");
+            };
+            crop.extend_from_slice(data);
+            Ok(())
+        })
+        .unwrap();
+    for y in 0..2_usize {
+        let offset = ((y + 1) * 7 + 2) * 3;
+        assert_eq!(&crop[y * 9..(y + 1) * 9], &full[offset..offset + 9]);
+    }
+}
+
+#[cfg(feature = "jpeg-xl-read")]
+#[test]
+fn jpeg_xl_region_samples_match_full_render() {
+    use crate::codecs::jxl::JxlSource;
+    let bytes = include_bytes!("../tests/fixtures/sample.jxl");
+    let mut source = JxlSource::new(bytes).unwrap();
+    let mut full = Vec::new();
+    source
+        .read_region(rect(0, 0, 7, 5), &MemoryBudget::new(84), &mut |_, row| {
+            let DecodedRow::F32(data) = row else {
+                panic!("JPEG XL must deliver f32");
+            };
+            full.extend_from_slice(data);
+            Ok(())
+        })
+        .unwrap();
+    let mut crop = Vec::new();
+    source
+        .read_region(rect(2, 1, 3, 2), &MemoryBudget::new(36), &mut |_, row| {
+            let DecodedRow::F32(data) = row else {
+                panic!("JPEG XL must deliver f32");
+            };
+            crop.extend_from_slice(data);
+            Ok(())
+        })
+        .unwrap();
+    for y in 0..2_usize {
+        for x in 0..9_usize {
+            let expected = full[(y + 1) * 21 + 6 + x];
+            let actual = crop[y * 9 + x];
+            assert!(actual.is_finite() && expected.is_finite());
+            assert!((actual - expected).abs() <= 1.0e-4);
+        }
+    }
+}
