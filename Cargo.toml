@@ -10,7 +10,14 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 publish = false
 
+[features]
+default = []
+jpeg-read = ["dep:zune-jpeg"]
+jpeg-xl-read = ["dep:jxl-oxide"]
+
 [dependencies]
+zune-jpeg = { version = "0.5.15", optional = true, default-features = false, features = ["std"] }
+jxl-oxide = { version = "0.12.6", optional = true, default-features = false }
 
 [lints.rust]
 unsafe_code = "forbid"

@@ -45,3 +45,7 @@
 ## Not prioritized initially
 
 Historical JPEG output tuning, compatibility with the complete libvips or Sharp surface, hundreds of image operations, generalized image editing, custom codecs, FFI-heavy dependencies, and a universal compute DSL.
+
+## Decoder adapter experiment
+
+Read-only JPEG and JPEG XL source adapters are introduced behind Cargo features. They validate cropped source-to-sink execution and managed vs. opaque memory boundaries; they do **not** complete phase 1's color, orientation, malformed-input and full encoder requirements. See [ADR-0012](adr/0012-codec-source-contract.md).

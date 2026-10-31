@@ -1,4 +1,4 @@
-//! Errors returned by the experimental, codec-free execution path.
+//! Errors returned by the experimental engine and decoder execution paths.
 
 use std::fmt;
 
@@ -16,8 +16,17 @@ pub(crate) enum Error {
     PixelFormatMismatch,
     SourceBindingMismatch,
     UnsupportedPixelOperation,
-    BudgetExceeded { requested: usize, available: usize },
+    BudgetExceeded {
+        requested: usize,
+        available: usize,
+    },
     Cancelled,
+    // Constructed only when an optional real codec is enabled.
+    #[allow(dead_code)]
+    DecodeFailed,
+    IncompleteDecoderOutput,
+    #[allow(dead_code)]
+    UnsupportedCodecLayout,
 }
 
 impl fmt::Display for Error {
@@ -57,6 +66,13 @@ impl fmt::Display for Error {
                 "managed buffer needs {requested} bytes with {available} bytes available"
             ),
             Self::Cancelled => write!(f, "processing was cancelled by the output sink"),
+            Self::DecodeFailed => write!(f, "decoder rejected input or could not render it"),
+            Self::IncompleteDecoderOutput => {
+                write!(f, "decoder did not provide the complete output region")
+            }
+            Self::UnsupportedCodecLayout => {
+                write!(f, "decoder pixel or color layout is not supported")
+            }
         }
     }
 }
