@@ -204,27 +204,29 @@ pub fn transcode(
     .validate()?;
     let target_size = Size::new(options.output_width, options.output_height)?;
     let source = open_source(encoded, format)?;
-    let source: Box<dyn DecodeSource + '_> = if options.profile_policy
-        == InputProfilePolicy::UseRenderedIcc
-    {
-        #[cfg(feature = "icc")]
-        {
-            Box::new(crate::cms::IccSrgbSource::new(source)?)
-        }
-        #[cfg(not(feature = "icc"))]
-        {
-            return Err(ProcessingError::new("enable the icc Cargo feature"));
-        }
-    } else {
-        source
-    };
+    let source: Box<dyn DecodeSource + '_> =
+        if options.profile_policy == InputProfilePolicy::UseRenderedIcc {
+            #[cfg(feature = "icc")]
+            {
+                Box::new(crate::cms::IccSrgbSource::new(source)?)
+            }
+            #[cfg(not(feature = "icc"))]
+            {
+                return Err(ProcessingError::new("enable the icc Cargo feature"));
+            }
+        } else {
+            source
+        };
     let mut actual: Box<dyn DecodeSource + '_> = if source.info().rendered_icc.is_none()
         && source.info().rendered_cicp.is_none()
         && options.profile_policy == InputProfilePolicy::AssumeSrgbIfMissing
     {
         let mut info = source.info().clone();
         info.rendered_cicp = Some([1, 13, 0, 1]);
-        Box::new(ExplicitSrgb { decoder: source, info })
+        Box::new(ExplicitSrgb {
+            decoder: source,
+            info,
+        })
     } else {
         source
     };

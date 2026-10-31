@@ -29,12 +29,15 @@ impl<'a> IccSrgbSource<'a> {
         if info.layout != ChannelLayout::Rgb || info.alpha != AlphaMode::Opaque {
             return Err(Error::UnsupportedCodecLayout);
         }
-        let bytes = info.rendered_icc.as_deref().ok_or(Error::UnsupportedColorEncoding)?;
+        let bytes = info
+            .rendered_icc
+            .as_deref()
+            .ok_or(Error::UnsupportedColorEncoding)?;
         if bytes.len() > 4 * 1024 * 1024 {
             return Err(Error::UnsupportedColorEncoding);
         }
-        let src = ColorProfile::new_from_slice(bytes)
-            .map_err(|_| Error::UnsupportedColorEncoding)?;
+        let src =
+            ColorProfile::new_from_slice(bytes).map_err(|_| Error::UnsupportedColorEncoding)?;
         let dst = ColorProfile::new_srgb();
         let transformer = src
             .create_transform_f32(Layout::Rgb, &dst, Layout::Rgb, TransformOptions::default())
@@ -43,7 +46,11 @@ impl<'a> IccSrgbSource<'a> {
         output.sample = SampleType::F32;
         output.rendered_icc = None;
         output.rendered_cicp = Some([1, 13, 0, 1]);
-        Ok(Self { source, output, transformer })
+        Ok(Self {
+            source,
+            output,
+            transformer,
+        })
     }
 }
 impl DecodeSource for IccSrgbSource<'_> {
@@ -58,7 +65,8 @@ impl DecodeSource for IccSrgbSource<'_> {
     ) -> Result<DecodeReport, Error> {
         let len = usize::try_from(region.width)
             .map_err(|_| Error::GeometryOverflow)?
-            .checked_mul(3).ok_or(Error::GeometryOverflow)?;
+            .checked_mul(3)
+            .ok_or(Error::GeometryOverflow)?;
         let mut input = budget.allocate_typed::<f32>(len)?;
         let mut output = budget.allocate_typed::<f32>(len)?;
         let expected_sample = self.source.info().sample;
@@ -79,7 +87,8 @@ impl DecodeSource for IccSrgbSource<'_> {
                 .map_err(|_| Error::UnsupportedColorEncoding)?;
             sink(y, DecodedRow::F32(output.as_slice()))
         })?;
-        report.output_sample_bytes = report.rows
+        report.output_sample_bytes = report
+            .rows
             .checked_mul(u64::from(region.width))
             .and_then(|n| n.checked_mul(12))
             .ok_or(Error::GeometryOverflow)?;
