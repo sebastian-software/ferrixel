@@ -27,6 +27,7 @@ Every ADR contains **Status**, **Date**, **Last reviewed**, **Context**, **Decis
 | [0009](0009-living-adr-process.md) | Decision lifecycle and amendment policy | Accepted |
 | [0010](0010-dual-licensing.md) | Dual-license Ferrixel under MIT OR Apache-2.0 | Accepted |
 | [0013](0013-sample-domain-resize.md) | Preserve rendered metadata and validate sample-domain codec resize | Experimental |
+| [0014](0014-linear-srgb-straight-alpha.md) | Explicit sRGB linear-light resize and premultiplied filtering | Experimental |
 | [0012](0012-codec-source-contract.md) | Real decoder sources: explicit ROI capabilities and JPEG fallback | Experimental |
 | [0011](0011-borrowed-planar-surface-contract.md) | Borrowed, byte-strided YUV420P10 source contract | Experimental |
 

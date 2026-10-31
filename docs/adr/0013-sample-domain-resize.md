@@ -48,3 +48,7 @@ Codec-native scaling or regional execution offers a better tradeoff; linear-ligh
 ## Amendment log
 
 - 2026-10-31 — Initial bounded, codec-backed sample-domain resize experiment.
+
+## 2026-10-31: separate linear-light reference (does not supersede this domain)
+
+[ADR-0014](0014-linear-srgb-straight-alpha.md) adds a distinct, opt-in `LinearSrgb` domain for strict sRGB U8 RGB/straight RGBA input. This existing encoded-sample domain remains available for controlled experiments and explicitly does not promise transfer-aware or alpha-correct output.

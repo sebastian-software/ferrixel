@@ -57,3 +57,7 @@ Real adapters require substantially different contracts or the model forces unne
 ## 2026-10-31: experimental progress (not acceptance)
 
 [ADR-0013](0013-sample-domain-resize.md) now carries exact rendered ICC/CICP bytes and uncertain alpha status through graph nodes and tests a deliberately *encoded-sample-domain* bilinear resizer. These facts **do not** resolve ICC/CICP precedence, transfer-function linearization, HDR fidelity or premultiplied alpha. This ADR remains Proposed.
+
+## 2026-10-31: reference color-fidelity boundary
+
+[ADR-0014](0014-linear-srgb-straight-alpha.md) demonstrates an opt-in linear-light bilinear path for **unambiguous CICP sRGB RGB8 and straight RGBA8**. No other metadata can be implicitly converted, and the existing more general color-management decision remains Proposed. The experiment establishes a baseline for alpha-safe and transfer-aware processing, not complete ICC, HDR, or native YUV pipeline negotiation.

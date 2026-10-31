@@ -53,3 +53,7 @@ Read-only JPEG and JPEG XL source adapters are introduced behind Cargo features.
 ## 2026-10-31: Real decoder resize experiment
 
 An explicitly selected sample-domain bilinear `JPEG/JPEG XL decoder → crop* → resize → crop* → borrowed row sink` path now probes real codec output and end-to-end row lifetimes. Rendered ICC/CICP and alpha association are tracked through the graph and verified on binding. No color-managed filtering, alpha-aware compositing or HDR conversion is claimed. The next work should evaluate quality-correct linear-light and premultiplied-alpha paths and measure region overfetch rather than adding codec support for its own sake. See [ADR-0013](adr/0013-sample-domain-resize.md).
+
+## Color fidelity experiment (2026-10-31)
+
+The [first opt-in linear-light sRGB path](design/color-correctness-experiment.md) introduces a correct transfer-function and straight-alpha bilinear reference for strictly tagged RGB8/RGBA8. No ICC parser, gamut conversion, HDR transfer processing or encoder path is available. The next color milestone is an explicit trusted **decoder output profile / color transform** contract, not treating untagged JPEG or JPEG XL float samples as sRGB. Correctness fixtures should precede SIMD and antialiasing optimizations. See [ADR-0014](adr/0014-linear-srgb-straight-alpha.md).
