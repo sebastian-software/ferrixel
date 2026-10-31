@@ -62,3 +62,6 @@ mod color_contract_tests;
 
 #[cfg(all(test, feature = "avif-write"))]
 mod avif_sink_tests;
+
+#[cfg(all(test, feature = "jpeg-read", feature = "avif-write"))]
+mod pipeline_tests;

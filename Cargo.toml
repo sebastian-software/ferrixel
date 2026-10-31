@@ -16,6 +16,7 @@ jpeg-read = ["dep:zune-jpeg"]
 jpeg-xl-read = ["dep:jxl-oxide"]
 avif-write = ["dep:ravif"]
 avif-read = ["dep:avif-decode"]
+cli = ["jpeg-read", "jpeg-xl-read", "avif-read", "avif-write"]
 
 
 [dependencies]
@@ -30,3 +31,8 @@ unsafe_code = "forbid"
 [lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
+
+[[bin]]
+name = "ferrixel"
+path = "src/bin/ferrixel.rs"
+required-features = ["cli"]
