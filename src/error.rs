@@ -16,7 +16,10 @@ pub(crate) enum Error {
     PixelFormatMismatch,
     SourceBindingMismatch,
     UnsupportedPixelOperation,
-    BudgetExceeded { requested: usize, available: usize },
+    BudgetExceeded {
+        requested: usize,
+        available: usize,
+    },
     Cancelled,
     // Constructed only when an optional real codec is enabled.
     #[allow(dead_code)]
