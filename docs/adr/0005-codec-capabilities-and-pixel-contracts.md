@@ -65,3 +65,7 @@ Real adapters require substantially different contracts or the model forces unne
 ### Channel identity as part of sample layout
 
 The sRGB-alpha experiment exposed a concrete architectural ambiguity: `InterleavedU8(4)` cannot distinguish RGBA from CMYK. The core now retains the `ChannelLayout` identity in each interleaved `PixelFormat`, and the explicit color reference only accepts `Rgb`/`Rgba`. This does not yet resolve wider color profile conversion or planar sample meaning; this ADR remains Proposed.
+
+## 2026-10-31: typed output color evidence
+
+[ADR-0015](0015-typed-output-color-signals.md) adds code point classification and no-allocation ICC header inspection to distinguish sRGB, Display P3, BT.2100 PQ/HLG and untrusted/dual profile signals. Its planning result only describes **requirements**, not a working CMM. Decoder adapters must describe emitted samples after any codec-level color conversion. The decision about a full working-space, ICC precedence and HDR reference luminance remains Proposed.

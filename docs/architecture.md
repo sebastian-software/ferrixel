@@ -113,3 +113,7 @@ Graph nodes now share exact rendered ICC and CICP metadata and alpha-association
 ## Strict linear-light sRGB reference (experimental)
 
 [ADR-0014](adr/0014-linear-srgb-straight-alpha.md) and [the reference experiment](design/color-correctness-experiment.md) add an explicitly tagged `LinearSrgb` resize domain to the existing semantic graph. It only accepts RGB8 opaque and RGBA8 straight-alpha samples with sole, unambiguous full-range RGB/sRGB CICP. RGB is transfer-decoded before interpolation; straight alpha is premultiplied in linear light and unpremultiplied for output. ICC/HDR/unknown alpha is deliberately rejected until a real color-management contract exists. This does not change codec ROI semantics, decoder-owned memory, or the CPU-first execution model.
+
+## Typed rendered-color contract (experimental)
+
+[ADR-0015](adr/0015-typed-output-color-signals.md) and [the color contract](design/color-management-contract.md) establish a no-pixel-allocation inspection stage for **decoder output evidence**: typed H.273/CICP code points, bounded ICC header and tag-table inspection, and explicit sRGB/P3/PQ/HLG or unresolved-profile classifications. The planner distinguishes a supported sRGB transfer reference from work that would require gamut conversion, HDR reference-white/tone-mapping policy, an ICC CMM, or profile precedence. ICC plus CICP are not silently merged; a valid header is not a validated ICC color transform. This does not add new codec support or a full ICC engine.

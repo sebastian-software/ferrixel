@@ -57,3 +57,7 @@ An explicitly selected sample-domain bilinear `JPEG/JPEG XL decoder â†’ crop* â†
 ## Color fidelity experiment (2026-10-31)
 
 The [first opt-in linear-light sRGB path](design/color-correctness-experiment.md) introduces a correct transfer-function and straight-alpha bilinear reference for strictly tagged RGB8/RGBA8. No ICC parser, gamut conversion, HDR transfer processing or encoder path is available. The next color milestone is an explicit trusted **decoder output profile / color transform** contract, not treating untagged JPEG or JPEG XL float samples as sRGB. Correctness fixtures should precede SIMD and antialiasing optimizations. See [ADR-0014](adr/0014-linear-srgb-straight-alpha.md).
+
+## Explicit color evidence (2026-10-31)
+
+[ADR-0015](adr/0015-typed-output-color-signals.md) records the next experiment: classify **rendered** decoder color signals without changing pixels. The shared contract identifies sRGB, Display P3, BT.2100 PQ and HLG, preserves unsupported code points, inspects only ICC header/tag-table bounds, and refuses to guess precedence when ICC and CICP are both present. The linear-sRGB path delegates eligibility to that contract; all other conversion capabilities remain unavailable. Before admitting ICC or HDR transforms, specify the CMM's supported profile classes, pixel and reference-white domains, output metadata, black-point/intent policy, memory accounting, licensing and differential color fixtures.

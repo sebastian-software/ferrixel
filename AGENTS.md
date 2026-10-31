@@ -12,7 +12,8 @@ Ferrixel is in an intentionally **design-first** phase. Do not turn a proposed a
 - No `unsafe` in the engine crate. If a future codec or platform adapter needs `unsafe` or FFI, isolate and audit that boundary; do not imply that the entire dependency graph is memory-safe.
 - No unmeasured performance claims. Establish correctness and a scalar/reference path before hand-written SIMD or GPU specialization.
 - Never optimize only for historical JPEG compatibility at the expense of modern formats; do not claim partial decoding is supported unless the *specific decoder implementation* exposes it.
-- Keep output semantics explicit: crop coordinates, orientation, bit depth, color space, transfer function, chroma siting, alpha handling, precision and filtering all matter. In particular, [ADR-0011](docs/adr/0011-borrowed-planar-surface-contract.md) permits only even-origin YUV420P10 crops and no planar resize until a chroma-aware quality policy exists.
+- Keep output semantics explicit: crop coordinates, orientation, bit depth, color space, transfer function, chroma siting, alpha handling, precision and filtering all matter.
+- Codec color metadata must describe the **emitted samples**. ICC header inspection alone is not a color transform; never auto-prioritize ICC versus CICP or reinterpret P3/PQ/HLG as sRGB. See ADR-0015. In particular, [ADR-0011](docs/adr/0011-borrowed-planar-surface-contract.md) permits only even-origin YUV420P10 crops and no planar resize until a chroma-aware quality policy exists.
 - The plan must make materializations and CPU/GPU transfers observable.
 
 ## Local checks
