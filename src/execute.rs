@@ -117,8 +117,8 @@ fn execute_planned_region(
                     .chunks_exact_mut(step.region.width as usize)
                     .enumerate()
                 {
-                    let source_y = step.region.y
-                        + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
+                    let source_y =
+                        step.region.y + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
                     for (column, pixel) in line.iter_mut().enumerate() {
                         let source_x = step.region.x
                             + u32::try_from(column).map_err(|_| Error::GeometryOverflow)?;
@@ -148,8 +148,8 @@ fn execute_planned_region(
                     .chunks_exact_mut(row_width)
                     .enumerate()
                 {
-                    let output_y = step.region.y
-                        + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
+                    let output_y =
+                        step.region.y + u32::try_from(row).map_err(|_| Error::GeometryOverflow)?;
                     let sy = sample_at(output_y, input_size.height, node.size.height);
                     for (column, pixel) in line.iter_mut().enumerate() {
                         let output_x = step.region.x
@@ -159,13 +159,11 @@ fn execute_planned_region(
                         let top_right = f64::from(source.get(sx.upper, sy.lower));
                         let bottom_left = f64::from(source.get(sx.lower, sy.upper));
                         let bottom_right = f64::from(source.get(sx.upper, sy.upper));
-                        let horizontal_top =
-                            top_left + (top_right - top_left) * sx.upper_weight;
+                        let horizontal_top = top_left + (top_right - top_left) * sx.upper_weight;
                         let horizontal_bottom =
                             bottom_left + (bottom_right - bottom_left) * sx.upper_weight;
                         *pixel = quantize_gray8(
-                            horizontal_top
-                                + (horizontal_bottom - horizontal_top) * sy.upper_weight,
+                            horizontal_top + (horizontal_bottom - horizontal_top) * sy.upper_weight,
                         );
                     }
                 }
