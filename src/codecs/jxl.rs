@@ -35,7 +35,7 @@ impl JxlSource {
             sample: SampleType::F32,
             access: DecodeAccess::CodecRegionRequest,
             alpha: match layout {
-                ChannelLayout::Graya | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
+                ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
                     AlphaMode::Unspecified
                 }
                 ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
