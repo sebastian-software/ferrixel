@@ -20,9 +20,13 @@ pub(crate) enum NodeKind {
     Planar10Source,
     DecoderSource,
     /// The pixel values are transformed to linear-light, premultiplied RGB.
-    ToLinearSrgb { input: NodeId },
+    ToLinearSrgb {
+        input: NodeId,
+    },
     /// An explicit quantization / final output color boundary.
-    ToSrgb8 { input: NodeId },
+    ToSrgb8 {
+        input: NodeId,
+    },
     Crop {
         input: NodeId,
         rect: Rect,
@@ -205,10 +209,16 @@ impl Graph {
         let alpha = match parent.format {
             PixelFormat::InterleavedU8(ChannelLayout::Rgb)
             | PixelFormat::InterleavedF32(ChannelLayout::Rgb)
-                if parent.semantics.alpha == AlphaMode::Opaque => AlphaMode::Opaque,
+                if parent.semantics.alpha == AlphaMode::Opaque =>
+            {
+                AlphaMode::Opaque
+            }
             PixelFormat::InterleavedU8(ChannelLayout::Rgba)
             | PixelFormat::InterleavedF32(ChannelLayout::Rgba)
-                if parent.semantics.alpha == AlphaMode::Straight => AlphaMode::Premultiplied,
+                if parent.semantics.alpha == AlphaMode::Straight =>
+            {
+                AlphaMode::Premultiplied
+            }
             _ => return Err(Error::UnsupportedPixelOperation),
         };
         if !matches!(
@@ -250,7 +260,10 @@ impl Graph {
             return Err(Error::UnsupportedPixelOperation);
         }
         Ok(self.push(Node {
-            kind: NodeKind::Resize { input, domain: ResizeDomain::WorkingLinear(filter) },
+            kind: NodeKind::Resize {
+                input,
+                domain: ResizeDomain::WorkingLinear(filter),
+            },
             size,
             format: parent.format,
             semantics: parent.semantics.clone(),
@@ -262,10 +275,14 @@ impl Graph {
         let format = match parent.format {
             PixelFormat::InterleavedF32(ChannelLayout::Rgb)
                 if parent.semantics.alpha == AlphaMode::Opaque =>
-                PixelFormat::InterleavedU8(ChannelLayout::Rgb),
+            {
+                PixelFormat::InterleavedU8(ChannelLayout::Rgb)
+            }
             PixelFormat::InterleavedF32(ChannelLayout::Rgba)
                 if parent.semantics.alpha == AlphaMode::Premultiplied =>
-                PixelFormat::InterleavedU8(ChannelLayout::Rgba),
+            {
+                PixelFormat::InterleavedU8(ChannelLayout::Rgba)
+            }
             _ => return Err(Error::UnsupportedPixelOperation),
         };
         if parent.semantics.color != crate::color::ColorEncoding::Cicp([1, 8, 0, 1]) {

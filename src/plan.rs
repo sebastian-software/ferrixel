@@ -48,8 +48,20 @@ pub(crate) fn plan_region(
             NodeKind::Resize { input, domain } => {
                 region = if let ResizeDomain::WorkingLinear(filter) = domain {
                     let source = graph.node(input)?.size;
-                    let (x, width) = footprint(source.width, node.size.width, region.x, region.width, filter)?;
-                    let (y, height) = footprint(source.height, node.size.height, region.y, region.height, filter)?;
+                    let (x, width) = footprint(
+                        source.width,
+                        node.size.width,
+                        region.x,
+                        region.width,
+                        filter,
+                    )?;
+                    let (y, height) = footprint(
+                        source.height,
+                        node.size.height,
+                        region.y,
+                        region.height,
+                        filter,
+                    )?;
                     Rect::new(x, y, width, height)?
                 } else {
                     bilinear_footprint(region, graph.node(input)?.size, node.size)?

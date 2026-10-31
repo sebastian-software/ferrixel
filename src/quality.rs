@@ -34,10 +34,9 @@ pub(crate) fn taps(input: u32, output: u32, at: u32, filter: Filter) -> Result<V
     for index in first..=last {
         let distance = f64::from(index) - center;
         let weight = match filter {
-            Filter::Area => {
-                ( (f64::from(index) + 0.5).min(center + radius)
-                    - (f64::from(index) - 0.5).max(center - radius)).max(0.0)
-            }
+            Filter::Area => ((f64::from(index) + 0.5).min(center + radius)
+                - (f64::from(index) - 0.5).max(center - radius))
+            .max(0.0),
             Filter::Lanczos3 => {
                 let d = distance / scale;
                 if d.abs() < 3.0 {
