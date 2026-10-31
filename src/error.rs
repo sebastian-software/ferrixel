@@ -18,8 +18,11 @@ pub(crate) enum Error {
     UnsupportedPixelOperation,
     BudgetExceeded { requested: usize, available: usize },
     Cancelled,
+    // Constructed only when an optional real codec is enabled.
+    #[allow(dead_code)]
     DecodeFailed,
     IncompleteDecoderOutput,
+    #[allow(dead_code)]
     UnsupportedCodecLayout,
 }
 

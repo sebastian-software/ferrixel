@@ -7,6 +7,8 @@ use crate::memory::MemoryBudget;
 use crate::plan::plan_region;
 use crate::surface::PixelFormat;
 
+// The opt-in decoders instantiate different subsets of these layouts.
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ChannelLayout {
     Gray,
@@ -33,6 +35,8 @@ pub(crate) enum SampleType {
     F32,
 }
 
+// A no-codec build can validate region planning without a full-frame adapter.
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DecodeAccess {
     /// Complete decoded frame required even if the sink needs only a crop.
@@ -60,6 +64,8 @@ impl DecoderInfo {
     }
 }
 
+// Float rows are only constructed by the optional JPEG XL adapter.
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum DecodedRow<'a> {
     U8(&'a [u8]),
