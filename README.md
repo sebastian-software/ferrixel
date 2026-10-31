@@ -64,4 +64,8 @@ All project materials, code, comments, ADRs and commits use **US English**. We f
 
 ## Status and licensing
 
-Design exploration; unpublished, unstable, and **not ready for production**. Publication and licensing are intentionally undecided pending an explicit project decision. Until then, do not assume permission to redistribute.
+Design exploration; unpublished, unstable, and **not ready for production**.
+
+Ferrixel is dual-licensed under **[MIT](LICENSE-MIT) OR [Apache License 2.0](LICENSE-APACHE)**, at your option. See [ADR-0010](docs/adr/0010-dual-licensing.md) for the rationale. Contributions are submitted under the same dual-license terms unless explicitly stated otherwise. Third-party codecs and dependencies retain their own licenses and require individual review before integration.
+
+Licensing does not imply a stable API or a published crate; first publication remains a separate decision.

@@ -7,6 +7,7 @@ authors = ["Sebastian Software GmbH"]
 description = "Experimental pipeline-first Rust image processing engine"
 repository = "https://github.com/sebastian-software/ferrixel"
 readme = "README.md"
+license = "MIT OR Apache-2.0"
 publish = false
 
 [dependencies]

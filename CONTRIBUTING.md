@@ -34,4 +34,7 @@ Benchmarks, once introduced, should report the operation, input dimensions and f
 
 ## Project boundaries
 
-Do not introduce release automation, external APIs, bindings, C FFI, a dedicated GPU framework, or public compatibility guarantees during the design scaffold phase without an accepted ADR. Licensing and first publication also require an explicit decision.
+Do not introduce release automation, external APIs, bindings, C FFI, a dedicated GPU framework, or public compatibility guarantees during the design scaffold phase without an accepted ADR. First publication still requires an explicit decision; project dual-licensing is accepted in [ADR-0010](docs/adr/0010-dual-licensing.md).
+## License of contributions
+
+Unless explicitly stated otherwise, contributions intentionally submitted to Ferrixel are licensed under **MIT OR Apache-2.0**, at the recipient's option. Only submit code and assets you have the right to license on those terms. Third-party libraries and copied code must undergo a separate license, attribution, and patent-obligation review before inclusion; the project's license does not relicense its dependencies.

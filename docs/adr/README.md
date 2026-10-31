@@ -25,6 +25,7 @@ Every ADR contains **Status**, **Date**, **Last reviewed**, **Context**, **Decis
 | [0007](0007-correctness-and-performance-evidence.md) | Correctness and benchmark evidence before optimization | Accepted |
 | [0008](0008-initial-vertical-slice.md) | Minimal architecture-validating implementation | Proposed |
 | [0009](0009-living-adr-process.md) | Decision lifecycle and amendment policy | Accepted |
+| [0010](0010-dual-licensing.md) | Dual-license Ferrixel under MIT OR Apache-2.0 | Accepted |
 
 ## Changing an ADR
 
