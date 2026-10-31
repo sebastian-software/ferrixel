@@ -5,9 +5,7 @@
 //! once per output scanline. The bounding ROI can still overfetch with JPEG XL.
 //! This is not color-managed or alpha-aware resampling.
 
-use crate::decoder::{
-    ChannelLayout, DecodeReport, DecodeSource, DecodedRow, SampleType,
-};
+use crate::decoder::{ChannelLayout, DecodeReport, DecodeSource, DecodedRow, SampleType};
 use crate::error::Error;
 use crate::geometry::Rect;
 use crate::graph::{Graph, NodeId, NodeKind, ResizeDomain};

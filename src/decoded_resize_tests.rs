@@ -172,7 +172,11 @@ fn f32_resize_preserves_negative_and_hdr_sample_values() {
     let resized = graph.resize_encoded_samples(id, size(4, 9)).unwrap();
     let mut actual = Vec::new();
     let report = execute_decoded_resize(
-        &graph, resized, id, &mut source, rect(0, 0, 4, 9),
+        &graph,
+        resized,
+        id,
+        &mut source,
+        rect(0, 0, 4, 9),
         &MemoryBudget::new(300),
         |_, row| {
             let DecodedRow::F32(data) = row else {
@@ -220,8 +224,13 @@ fn metadata_mismatch_is_detected_before_decode() {
     source.info.rendered_icc = Some(vec![4, 5, 6]);
     assert_eq!(
         execute_decoded_resize(
-            &graph, resized, id, &mut source, rect(0, 0, 4, 3),
-            &MemoryBudget::new(300), |_, _| Ok(())
+            &graph,
+            resized,
+            id,
+            &mut source,
+            rect(0, 0, 4, 3),
+            &MemoryBudget::new(300),
+            |_, _| Ok(())
         ),
         Err(Error::SourceBindingMismatch)
     );
@@ -231,7 +240,11 @@ fn metadata_mismatch_is_detected_before_decode() {
 #[test]
 fn alpha_and_cmyk_are_not_accidentally_resized() {
     let mut graph = Graph::new();
-    for layout in [ChannelLayout::Rgba, ChannelLayout::GrayAlpha, ChannelLayout::Cmyk] {
+    for layout in [
+        ChannelLayout::Rgba,
+        ChannelLayout::GrayAlpha,
+        ChannelLayout::Cmyk,
+    ] {
         let source = PatternSource::new(size(4, 4), SampleType::U8, layout);
         let id = bind(&mut graph, &source);
         assert_eq!(
@@ -239,7 +252,10 @@ fn alpha_and_cmyk_are_not_accidentally_resized() {
             Err(Error::UnsupportedPixelOperation)
         );
         if layout == ChannelLayout::Rgba {
-            assert_eq!(graph.node(id).unwrap().semantics.alpha, AlphaMode::Unspecified);
+            assert_eq!(
+                graph.node(id).unwrap().semantics.alpha,
+                AlphaMode::Unspecified
+            );
         }
     }
 }
@@ -253,8 +269,13 @@ fn memory_budget_and_cancellation_are_checked() {
     let small = MemoryBudget::new(33);
     assert!(matches!(
         execute_decoded_resize(
-            &graph, resized, id, &mut source, rect(0, 0, 4, 3),
-            &small, |_, _| Ok(())
+            &graph,
+            resized,
+            id,
+            &mut source,
+            rect(0, 0, 4, 3),
+            &small,
+            |_, _| Ok(())
         ),
         Err(Error::BudgetExceeded { .. })
     ));
@@ -264,8 +285,13 @@ fn memory_budget_and_cancellation_are_checked() {
     let mut calls = 0;
     assert_eq!(
         execute_decoded_resize(
-            &graph, resized, id, &mut source, rect(0, 0, 4, 3),
-            &budget, |_, _| {
+            &graph,
+            resized,
+            id,
+            &mut source,
+            rect(0, 0, 4, 3),
+            &budget,
+            |_, _| {
                 calls += 1;
                 Err(Error::Cancelled)
             }
@@ -287,8 +313,13 @@ fn real_jpeg_full_frame_fallback_is_decoded_once_for_resize() {
     let budget = MemoryBudget::new(180);
     let mut pixels = Vec::new();
     let report = execute_decoded_resize(
-        &graph, resized, id, &mut source, rect(0, 0, 3, 3),
-        &budget, |_, row| {
+        &graph,
+        resized,
+        id,
+        &mut source,
+        rect(0, 0, 3, 3),
+        &budget,
+        |_, row| {
             let DecodedRow::U8(data) = row else {
                 panic!("expected RGB8");
             };
@@ -314,8 +345,13 @@ fn real_jxl_float_roi_flows_through_resize() {
     let resized = graph.resize_encoded_samples(id, size(4, 3)).unwrap();
     let mut samples = 0;
     let report = execute_decoded_resize(
-        &graph, resized, id, &mut source, rect(1, 0, 2, 3),
-        &MemoryBudget::new(200), |_, row| {
+        &graph,
+        resized,
+        id,
+        &mut source,
+        rect(1, 0, 2, 3),
+        &MemoryBudget::new(200),
+        |_, row| {
             let DecodedRow::F32(data) = row else {
                 panic!("expected f32");
             };

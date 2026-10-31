@@ -60,7 +60,9 @@ impl DecoderInfo {
     pub(crate) fn semantics(&self) -> ImageSemantics {
         let alpha = match self.layout {
             ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
-            ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => AlphaMode::Unspecified,
+            ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
+                AlphaMode::Unspecified
+            }
         };
         ImageSemantics {
             color: ColorEncoding::from_metadata(self.rendered_icc.as_deref(), self.rendered_cicp),

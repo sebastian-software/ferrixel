@@ -129,10 +129,16 @@ impl Graph {
     }
 
     /// A bilinear sample-domain reference, not linear-light color management.
-    pub(crate) fn resize_encoded_samples(&mut self, input: NodeId, size: Size) -> Result<NodeId, Error> {
+    pub(crate) fn resize_encoded_samples(
+        &mut self,
+        input: NodeId,
+        size: Size,
+    ) -> Result<NodeId, Error> {
         let parent = self.node(input)?;
-        if !matches!(parent.format, PixelFormat::InterleavedU8(1 | 3) | PixelFormat::InterleavedF32(1 | 3))
-            || parent.semantics.alpha != AlphaMode::Opaque
+        if !matches!(
+            parent.format,
+            PixelFormat::InterleavedU8(1 | 3) | PixelFormat::InterleavedF32(1 | 3)
+        ) || parent.semantics.alpha != AlphaMode::Opaque
         {
             return Err(Error::UnsupportedPixelOperation);
         }
