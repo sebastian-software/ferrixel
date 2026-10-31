@@ -208,6 +208,19 @@ pub(crate) fn execute_quality_srgb8(
     needed.sort_unstable();
     needed.dedup();
 
+    // Lanczos can have exact zero crossings: the smallest *nonzero* source
+    // tap need not increase monotonically with the destination row. Retain
+    // each row until no remaining output row can reference it, rather than
+    // only checking the immediately following row.
+    let mut future_min_source = vec![u32::MAX; lines.len() + 1];
+    for index in (0..lines.len()).rev() {
+        let earliest = lines[index]
+            .first()
+            .ok_or(Error::IncompleteDecoderOutput)?
+            .index;
+        future_min_source[index] = earliest.min(future_min_source[index + 1]);
+    }
+
     let mut output = budget.allocate_typed::<u8>(width_components)?;
     let mut cache: VecDeque<CachedRow> = VecDeque::new();
     let mut output_rows = 0_usize;
@@ -272,12 +285,12 @@ pub(crate) fn execute_quality_srgb8(
                 requested.y + u32::try_from(output_rows).map_err(|_| Error::GeometryOverflow)?;
             sink(out_y, output.as_slice())?;
             output_rows += 1;
-            if let Some(next) = lines.get(output_rows).and_then(|line| line.first()) {
-                while cache.front().is_some_and(|row| row.y < next.index) {
-                    cache.pop_front();
-                }
-            } else {
-                cache.clear();
+            let earliest_future = future_min_source[output_rows];
+            while cache
+                .front()
+                .is_some_and(|row| row.y < earliest_future)
+            {
+                cache.pop_front();
             }
         }
         Ok(())
