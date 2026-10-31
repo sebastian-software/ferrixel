@@ -108,14 +108,14 @@ fn planar_crop_forwards_padded_10bit_rows_without_copies() {
     let dimensions = size(12, 10);
     let chroma = chroma_size(dimensions).unwrap();
     let ybytes = plane_bytes(dimensions, 29, 1);
-    let cbbytes = plane_bytes(chroma, 15, 2);
-    let crbytes = plane_bytes(chroma, 17, 3);
+    let blue_storage = plane_bytes(chroma, 15, 2);
+    let red_storage = plane_bytes(chroma, 17, 3);
     let surface = Yuv420P10::new(
         dimensions,
         hdr_color(),
         PlaneView::new(&ybytes, dimensions, 29).unwrap(),
-        PlaneView::new(&cbbytes, chroma, 15).unwrap(),
-        PlaneView::new(&crbytes, chroma, 17).unwrap(),
+        PlaneView::new(&blue_storage, chroma, 15).unwrap(),
+        PlaneView::new(&red_storage, chroma, 17).unwrap(),
     )
     .unwrap();
 
@@ -159,14 +159,14 @@ fn odd_luma_dimensions_map_to_ceil_chroma_dimensions() {
     let dimensions = size(7, 5);
     let chroma = chroma_size(dimensions).unwrap();
     let ybytes = plane_bytes(dimensions, 15, 1);
-    let cbbytes = plane_bytes(chroma, 9, 2);
-    let crbytes = plane_bytes(chroma, 9, 3);
+    let blue_storage = plane_bytes(chroma, 9, 2);
+    let red_storage = plane_bytes(chroma, 9, 3);
     let surface = Yuv420P10::new(
         dimensions,
         hdr_color(),
         PlaneView::new(&ybytes, dimensions, 15).unwrap(),
-        PlaneView::new(&cbbytes, chroma, 9).unwrap(),
-        PlaneView::new(&crbytes, chroma, 9).unwrap(),
+        PlaneView::new(&blue_storage, chroma, 9).unwrap(),
+        PlaneView::new(&red_storage, chroma, 9).unwrap(),
     )
     .unwrap();
     let mut graph = Graph::new();

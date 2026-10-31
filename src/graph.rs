@@ -66,7 +66,7 @@ impl Graph {
             return Err(Error::OutOfBounds);
         }
         if matches!(parent.format, PixelFormat::Yuv420P10(_))
-            && (rect.x % 2 != 0 || rect.y % 2 != 0)
+            && (!rect.x.is_multiple_of(2) || !rect.y.is_multiple_of(2))
         {
             return Err(Error::ChromaPhaseRequiresResampling);
         }

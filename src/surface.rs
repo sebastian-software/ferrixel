@@ -219,7 +219,7 @@ pub(crate) fn chroma_size(size: Size) -> Result<Size, Error> {
 /// Odd offsets are rejected: they change chroma phase and cannot be expressed
 /// as a simple byte-offset view. This is an experiment, not general crop support.
 pub(crate) fn chroma_rect(luma: Rect) -> Result<Rect, Error> {
-    if luma.x % 2 != 0 || luma.y % 2 != 0 {
+    if !luma.x.is_multiple_of(2) || !luma.y.is_multiple_of(2) {
         return Err(Error::ChromaPhaseRequiresResampling);
     }
     Rect::new(
