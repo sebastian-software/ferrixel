@@ -1,6 +1,6 @@
 # ADR-0002: Separate the semantic graph from the execution planner
 
-- **Status:** Proposed
+- **Status:** Experimental
 - **Date:** 2026-10-31
 - **Last reviewed:** 2026-10-31
 - **Supersedes:** None
@@ -38,6 +38,15 @@ Run the same crop + resize graph with synthetic scanline and region sources. Ver
 
 Graph-node metadata grows faster than supported behavior, or repeated experiments show the planner cannot meaningfully improve a fixed pipeline.
 
+## Experiment: scalar single-chain prototype (2026-10-31)
+
+The experimental code uses an append-only, index-addressed graph with three internal node types: synthetic source, crop, and bilinear resize. Parent references always point to existing nodes, so cycles cannot be introduced through the builder. The graph is semantic: it stores dimensions, crop coordinates and resize intent, **not** execution buffers. `plan_region` walks backward from a requested output rectangle and returns region requirements in execution order. The CPU executor operates on that plan with no codec-specific knowledge.
+
+**Not decided:** a publicly exposed graph representation; branching/multiple inputs; a persistent execution IR; scheduling/caching; color and pixel-layout negotiation. The initial planner's `Vec<Step>` is intentionally disposable, not a stable interface.
+
+**New tests:** a downstream crop after two resizes matches an independent eager reference; out-of-bounds requests are rejected before allocation.
+
 ## Amendment log
 
 - 2026-10-31 — Initial proposal.
+- 2026-10-31 — Added a bounded scalar vertical-slice experiment; unresolved contracts remain explicitly provisional.

@@ -75,3 +75,22 @@ These are semantic requirements, not an invitation to implement every possible l
 5. When does the additional complexity of a GPU path pay for itself over a well-planned CPU path?
 
 These questions are tracked in [the ADRs](adr/README.md), not decided by this sketch.
+
+## First executable experiment (not a stable contract)
+
+The internal Rust implementation in `src/` tests the four layers using a **single-chain Gray8** graph with synthetic random-access source, crop, scalar bilinear resize, and a borrowed scanline sink:
+
+```text
+caller's requested output rectangle
+    → schedule one output row
+    → backward region footprint through resize and crop
+    → synthetic source generates only that footprint
+    → crop rebases the region without copying
+    → resize allocates just its required output row
+    → sink borrows that row; both input/output reservations are released
+    → repeat with the next output row
+```
+
+**Why one row?** With extreme downsampling, two consecutive target rows can sample source rows millions of pixels apart. Taking their union as one source rectangle materializes unnecessary intervening scanlines. Planning each requested row avoids that specific trap; future planners may merge adjacent rows only when doing so is worthwhile.
+
+This experiment has no codec integration, advanced color model, multi-input branching, parallel worker scheduler, or GPU support. The budget currently tracks explicitly allocated **pixel bytes only**, not metadata, codec internals, or sink-owned buffers. This limitation must remain visible when comparing real workloads. See [the experiment's contracts](design/region-experiment.md) and ADRs [0002](adr/0002-semantic-graph-and-planner.md), [0003](adr/0003-demand-driven-regions.md), and [0004](adr/0004-buffer-ownership-and-budget.md).

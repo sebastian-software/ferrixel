@@ -17,13 +17,13 @@ Every ADR contains **Status**, **Date**, **Last reviewed**, **Context**, **Decis
 | ADR | Topic | Status |
 | --- | --- | --- |
 | [0001](0001-project-thesis.md) | Pipeline-first project principles and modern-format scope | Accepted |
-| [0002](0002-semantic-graph-and-planner.md) | Semantic graph separated from capability-aware planner | Proposed |
-| [0003](0003-demand-driven-regions.md) | Demand propagation, region footprints and fallback | Proposed |
-| [0004](0004-buffer-ownership-and-budget.md) | Ownership, allocation and realistic memory budgets | Proposed |
+| [0002](0002-semantic-graph-and-planner.md) | Semantic graph separated from capability-aware planner | Experimental |
+| [0003](0003-demand-driven-regions.md) | Demand propagation, region footprints and fallback | Experimental |
+| [0004](0004-buffer-ownership-and-budget.md) | Ownership, allocation and realistic memory budgets | Experimental |
 | [0005](0005-codec-capabilities-and-pixel-contracts.md) | Modern codec adapters, color and layout contracts | Proposed |
 | [0006](0006-cpu-first-gpu-capable-execution.md) | Execution scheduling, SIMD and conditional GPU | Proposed |
 | [0007](0007-correctness-and-performance-evidence.md) | Correctness and benchmark evidence before optimization | Accepted |
-| [0008](0008-initial-vertical-slice.md) | Minimal architecture-validating implementation | Proposed |
+| [0008](0008-initial-vertical-slice.md) | Minimal architecture-validating implementation | Experimental |
 | [0009](0009-living-adr-process.md) | Decision lifecycle and amendment policy | Accepted |
 | [0010](0010-dual-licensing.md) | Dual-license Ferrixel under MIT OR Apache-2.0 | Accepted |
 

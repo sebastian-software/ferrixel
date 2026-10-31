@@ -1,6 +1,6 @@
 # ADR-0003: Model demand as regions with explicit dependencies
 
-- **Status:** Proposed
+- **Status:** Experimental
 - **Date:** 2026-10-31
 - **Last reviewed:** 2026-10-31
 - **Supersedes:** None
@@ -44,6 +44,15 @@ Synthetic tests for noninteger scaling, filter halos, edge handling, orientation
 
 Dependency mapping or overlap bookkeeping consistently dominates simple pipelines, or decoder APIs make region selection impractical across targeted formats.
 
+## Experiment: scanline-shaped work units (2026-10-31)
+
+The current scheduler requests **one output row at a time**, then performs backward region mapping for that row. A crop translates coordinates without copying. Bilinear resize computes the exact bounding rectangle of its two horizontal and vertical sample neighbors, with clamping at source edges. A separate upstream footprint is calculated for each row. This prevents an extreme vertical downscale from inadvertently requesting all intervening source rows, which would happen if an entire output frame were mapped to one source bounding rectangle.
+
+This is deliberately **not** a fixed scanline architecture contract: the logical primitive remains a rectangle, and future workers may choose larger work units or multiple disjoint input spans. Horizontally sparse accesses are currently represented by one conservative bounding rectangle. Codec-native group alignment, rotation, filters beyond bilinear, repeated-ROI caching, and full-frame fallbacks are not implemented.
+
+**New tests:** very tall synthetic input and a severe vertical downscale request at most two source rows per output row for a single bilinear resize.
+
 ## Amendment log
 
 - 2026-10-31 — Initial proposal.
+- 2026-10-31 — Added a bounded scalar vertical-slice experiment; unresolved contracts remain explicitly provisional.
