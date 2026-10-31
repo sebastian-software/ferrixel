@@ -17,9 +17,7 @@ pub(crate) enum ColorEncoding {
 impl ColorEncoding {
     /// The planner owns color classification; a profile is never discarded
     /// merely because a second CICP hint resembles sRGB.
-    pub(crate) fn linear_srgb_readiness(
-        &self,
-    ) -> crate::color_contract::LinearSrgbReadiness {
+    pub(crate) fn linear_srgb_readiness(&self) -> crate::color_contract::LinearSrgbReadiness {
         crate::color_contract::plan_to_linear_srgb(self)
     }
 

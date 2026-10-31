@@ -24,25 +24,59 @@ fn header_only_icc() -> Vec<u8> {
 #[test]
 fn known_cicp_families_are_distinguished_without_pixel_conversion() {
     let cases = [
-        ([1, 13, 0, 1], CicpFamily::Srgb, LinearSrgbReadiness::TransferReferenceReady),
-        ([12, 13, 0, 1], CicpFamily::DisplayP3, LinearSrgbReadiness::RequiresGamutConversion),
-        ([9, 16, 0, 1], CicpFamily::Bt2100Pq, LinearSrgbReadiness::RequiresHdrManagement),
-        ([9, 18, 9, 0], CicpFamily::Bt2100Hlg, LinearSrgbReadiness::RequiresHdrManagement),
-        ([1, 13, 0, 0], CicpFamily::Other, LinearSrgbReadiness::UnknownSignal),
-        ([1, 13, 1, 1], CicpFamily::Other, LinearSrgbReadiness::UnknownSignal),
-        ([1, 1, 0, 1], CicpFamily::Other, LinearSrgbReadiness::UnknownSignal),
+        (
+            [1, 13, 0, 1],
+            CicpFamily::Srgb,
+            LinearSrgbReadiness::TransferReferenceReady,
+        ),
+        (
+            [12, 13, 0, 1],
+            CicpFamily::DisplayP3,
+            LinearSrgbReadiness::RequiresGamutConversion,
+        ),
+        (
+            [9, 16, 0, 1],
+            CicpFamily::Bt2100Pq,
+            LinearSrgbReadiness::RequiresHdrManagement,
+        ),
+        (
+            [9, 18, 9, 0],
+            CicpFamily::Bt2100Hlg,
+            LinearSrgbReadiness::RequiresHdrManagement,
+        ),
+        (
+            [1, 13, 0, 0],
+            CicpFamily::Other,
+            LinearSrgbReadiness::UnknownSignal,
+        ),
+        (
+            [1, 13, 1, 1],
+            CicpFamily::Other,
+            LinearSrgbReadiness::UnknownSignal,
+        ),
+        (
+            [1, 1, 0, 1],
+            CicpFamily::Other,
+            LinearSrgbReadiness::UnknownSignal,
+        ),
     ];
     for (raw, family, requirement) in cases {
         let signal = Cicp::try_from(raw).unwrap();
         assert_eq!(signal.family(), family, "{raw:?}");
-        assert_eq!(inspect_rendered_color(None, Some(raw)), ColorSignal::Cicp(signal));
+        assert_eq!(
+            inspect_rendered_color(None, Some(raw)),
+            ColorSignal::Cicp(signal)
+        );
         assert_eq!(plan_to_linear_srgb(&ColorEncoding::Cicp(raw)), requirement);
     }
 }
 
 #[test]
 fn malformed_range_is_not_assumed_to_be_srgb() {
-    assert_eq!(Cicp::try_from([1, 13, 0, 2]), Err(CicpError::InvalidRangeFlag));
+    assert_eq!(
+        Cicp::try_from([1, 13, 0, 2]),
+        Err(CicpError::InvalidRangeFlag)
+    );
     assert_eq!(
         inspect_rendered_color(None, Some([1, 13, 0, 255])),
         ColorSignal::MalformedCicp(CicpError::InvalidRangeFlag)
@@ -62,7 +96,10 @@ fn icc_header_inspection_never_qualifies_as_a_color_transform() {
     assert_eq!(header.data_color_space, *b"RGB ");
     assert_eq!(header.profile_connection_space, *b"XYZ ");
     assert_eq!(header.tag_count, 0);
-    assert_eq!(inspect_rendered_color(Some(&bytes), None), ColorSignal::Icc(header));
+    assert_eq!(
+        inspect_rendered_color(Some(&bytes), None),
+        ColorSignal::Icc(header)
+    );
     assert_eq!(
         plan_to_linear_srgb(&ColorEncoding::Icc(bytes.into())),
         LinearSrgbReadiness::RequiresIccColorManagement
@@ -72,23 +109,38 @@ fn icc_header_inspection_never_qualifies_as_a_color_transform() {
 #[test]
 fn truncated_or_corrupt_icc_headers_fail_bounded_inspection() {
     let valid = header_only_icc();
-    assert_eq!(IccHeader::inspect(&valid[..131]), Err(IccHeaderError::Truncated));
+    assert_eq!(
+        IccHeader::inspect(&valid[..131]),
+        Err(IccHeaderError::Truncated)
+    );
 
     let mut bad = valid.clone();
     bad[36..40].copy_from_slice(b"fake");
-    assert_eq!(IccHeader::inspect(&bad), Err(IccHeaderError::InvalidSignature));
+    assert_eq!(
+        IccHeader::inspect(&bad),
+        Err(IccHeaderError::InvalidSignature)
+    );
 
     bad = valid.clone();
     bad[0..4].copy_from_slice(&133_u32.to_be_bytes());
-    assert_eq!(IccHeader::inspect(&bad), Err(IccHeaderError::InvalidDeclaredSize));
+    assert_eq!(
+        IccHeader::inspect(&bad),
+        Err(IccHeaderError::InvalidDeclaredSize)
+    );
 
     bad = valid.clone();
     bad[0..4].copy_from_slice(&127_u32.to_be_bytes());
-    assert_eq!(IccHeader::inspect(&bad), Err(IccHeaderError::InvalidDeclaredSize));
+    assert_eq!(
+        IccHeader::inspect(&bad),
+        Err(IccHeaderError::InvalidDeclaredSize)
+    );
 
     bad = valid;
     bad[128..132].copy_from_slice(&u32::MAX.to_be_bytes());
-    assert_eq!(IccHeader::inspect(&bad), Err(IccHeaderError::InvalidTagTable));
+    assert_eq!(
+        IccHeader::inspect(&bad),
+        Err(IccHeaderError::InvalidTagTable)
+    );
     assert_eq!(
         plan_to_linear_srgb(&ColorEncoding::Icc(bad.into())),
         LinearSrgbReadiness::MalformedColorEvidence
@@ -146,7 +198,12 @@ fn decoder_output_signal_survives_crop_but_blocks_unsupported_gamut() {
         Err(Error::UnsupportedColorEncoding)
     );
     assert_eq!(
-        graph.node(crop).unwrap().semantics.color.linear_srgb_readiness(),
+        graph
+            .node(crop)
+            .unwrap()
+            .semantics
+            .color
+            .linear_srgb_readiness(),
         LinearSrgbReadiness::RequiresGamutConversion
     );
 }

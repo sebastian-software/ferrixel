@@ -92,8 +92,8 @@ impl IccHeader {
                 .try_into()
                 .map_err(|_| IccHeaderError::Truncated)?,
         );
-        let declared = usize::try_from(declared_size)
-            .map_err(|_| IccHeaderError::InvalidDeclaredSize)?;
+        let declared =
+            usize::try_from(declared_size).map_err(|_| IccHeaderError::InvalidDeclaredSize)?;
         if declared < 132 || declared > bytes.len() {
             return Err(IccHeaderError::InvalidDeclaredSize);
         }
