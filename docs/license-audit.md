@@ -5,10 +5,11 @@ Ferrixel itself is **MIT OR Apache-2.0** (see [ADR-0010](adr/0010-dual-licensing
 ## Automated metadata screening
 
 ```sh
+python3 scripts/test_audit_licenses.py
 python3 scripts/audit-licenses.py
 ```
 
-The script invokes `cargo metadata --all-features`, traverses the resolved dependency graph and writes `target/m1-license-inventory.csv`. Ordinary CI **blocks strong-copyleft metadata** and reports missing/unknown/weak-copyleft terms as `REVIEW` without pretending they are approved. A strict pre-release run (`python3 scripts/audit-licenses.py --strict`) fails if *any* review item remains. This is a **metadata preflight, not a lawyer-reviewed dependency license audit**. `SPDX OR` grants a choice; metadata does not demonstrate how that choice must be documented or distributed.
+The script invokes `cargo metadata --all-features`, traverses the resolved dependency graph and writes `target/m1-license-inventory.csv`. Ordinary CI **blocks strong-copyleft metadata** and reports missing/unknown/weak-copyleft terms as `REVIEW` without pretending they are approved. Historical Cargo slash alternatives such as `MIT/Apache-2.0` are interpreted as `MIT OR Apache-2.0` by the metadata screener; the original string remains in the inventory. A strict pre-release run (`python3 scripts/audit-licenses.py --strict`) fails if *any* review item remains. This is a **metadata preflight, not a lawyer-reviewed dependency license audit**. `SPDX OR` grants a choice; metadata does not demonstrate how that choice must be documented or distributed.
 
 When a crate is flagged, review its exact source license, license-file and notices, selected feature/dependency tree, patent terms, and bundled native code before allowing it. Do not expand the allowlist just to make CI green.
 

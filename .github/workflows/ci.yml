@@ -34,6 +34,8 @@ jobs:
           for feature in jpeg-read jpeg-xl-read avif-read avif-write icc cli; do
             cargo check --no-default-features --features "$feature"
           done
+      - name: Verify license metadata expression policy
+        run: python3 scripts/test_audit_licenses.py
       - name: Screen transitive license metadata
         run: python3 scripts/audit-licenses.py
       - name: Attach the resolved dependency inventory

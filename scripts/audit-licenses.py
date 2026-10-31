@@ -100,15 +100,21 @@ class SpdxParser:
 def classify(expression: str | None) -> tuple[str, str]:
     if not expression:
         return "REVIEW", "Missing SPDX license metadata"
+    # Older Cargo manifests used a slash to mean the same *recipient choice*
+    # as SPDX OR. The slash is not permitted inside an SPDX license ID, so
+    # normalize it before tokenization; still retain the original metadata
+    # in the CSV for a manual source/license review.
+    legacy_slash = "/" in expression
+    normalized = expression.replace("/", " OR ")
     try:
-        # The tokenization must exactly cover the string after removing
-        # whitespace; unrecognized symbols must not be ignored.
-        tokens = TOKEN_RE.findall(expression)
-        if "".join(tokens) != "".join(expression.split()):
+        tokens = TOKEN_RE.findall(normalized)
+        if "".join(tokens) != "".join(normalized.split()):
             raise ValueError("unsupported SPDX syntax")
-        status = SpdxParser(expression).parse()
+        status = SpdxParser(normalized).parse()
     except ValueError as error:
         return "REVIEW", f"Unparsed SPDX expression: {error}"
+    if status == "METADATA_OK" and legacy_slash:
+        return status, "Legacy Cargo slash interpreted as OR; verify source license text"
     return {
         "METADATA_OK": (status, "Provisional SPDX choice; full notice review remains"),
         "REVIEW": (status, "Non-allowlisted/copyleft term or exception requires review"),
