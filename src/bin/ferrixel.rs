@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 5 {
         eprintln!(
-            "usage: ferrixel input.jpg output.avif WIDTH HEIGHT [--assume-srgb] [--area] [--quality=75] [--speed=6] [--budget-mb=256] [--crop=x,y,w,h]"
+            "usage: ferrixel input.jpg output.avif WIDTH HEIGHT [--assume-srgb|--use-rendered-icc] [--area] [--quality=75] [--speed=6] [--budget-mb=256] [--crop=x,y,w,h]"
         );
         std::process::exit(2);
     }
@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for option in args.iter().skip(5) {
         match option.as_str() {
             "--assume-srgb" => options.profile_policy = InputProfilePolicy::AssumeSrgbIfMissing,
+            "--use-rendered-icc" => options.profile_policy = InputProfilePolicy::UseRenderedIcc,
             "--area" => options.filter = ResizeFilter::Area,
             option if option.starts_with("--quality=") => options.quality = option[10..].parse()?,
             option if option.starts_with("--speed=") => options.speed = option[8..].parse()?,
