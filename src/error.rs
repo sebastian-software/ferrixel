@@ -26,6 +26,7 @@ pub(crate) enum Error {
     DecodeFailed,
     IncompleteDecoderOutput,
     NonFinitePixelSample,
+    InvalidAlphaValue,
     UnsupportedColorEncoding,
     UnsupportedAlphaMode,
     #[allow(dead_code)]
@@ -71,6 +72,9 @@ impl fmt::Display for Error {
             Self::Cancelled => write!(f, "processing was cancelled by the output sink"),
             Self::DecodeFailed => write!(f, "decoder rejected input or could not render it"),
             Self::NonFinitePixelSample => write!(f, "non-finite sample during resampling"),
+            Self::InvalidAlphaValue => {
+                write!(f, "straight alpha must be finite and between zero and one")
+            }
             Self::UnsupportedColorEncoding => write!(
                 f,
                 "linear-sRGB resize requires unambiguous full-range RGB sRGB CICP; ICC/unknown/HDR need a managed transform"

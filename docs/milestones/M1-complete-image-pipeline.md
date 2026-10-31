@@ -78,3 +78,7 @@ The order is intentional: **semantic correctness → complete data flow → perf
 - **M3:** Broader HDR/10-bit fidelity (PQ/HLG, tone mapping, scene/display reference white), more formats and animations, additional encoders including JPEG XL where licensing and capabilities permit.
 
 Neither phase is a prerequisite for the first actually useful image pipeline.
+
+## Progress note — first working-color reference
+
+A small, dependency-free `src/working_color.rs` reference experiment covers SDR sRGB and Display P3 transfer/gamut arithmetic and premultiplied straight alpha. It validates the math for work package 1, **not** the entire graph/region transform, ICC conversion or M1 exit criteria. See [ADR-0016](../adr/0016-working-color-space-and-transform-boundaries.md). Work package 1 stays open until the color-domain contract is expressible and executable through the actual planner.
