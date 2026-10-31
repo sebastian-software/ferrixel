@@ -5,6 +5,7 @@
 //! once per output scanline. The bounding ROI can still overfetch with JPEG XL.
 //! This is not color-managed or alpha-aware resampling.
 
+use crate::color_contract::LinearSrgbReadiness;
 use crate::decoder::{ChannelLayout, DecodeReport, DecodeSource, DecodedRow, SampleType};
 use crate::error::Error;
 use crate::geometry::Rect;
@@ -354,7 +355,9 @@ fn prepare_resize(
             if info.alpha != expected_alpha {
                 return Err(Error::UnsupportedAlphaMode);
             }
-            if !info.semantics().color.is_unambiguous_srgb() {
+            if info.semantics().color.linear_srgb_readiness()
+                != LinearSrgbReadiness::TransferReferenceReady
+            {
                 return Err(Error::UnsupportedColorEncoding);
             }
         }
