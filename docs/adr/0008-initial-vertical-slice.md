@@ -1,6 +1,6 @@
 # ADR-0008: Validate the architecture with a minimal vertical slice
 
-- **Status:** Proposed
+- **Status:** Experimental
 - **Date:** 2026-10-31
 - **Last reviewed:** 2026-10-31
 - **Supersedes:** None
@@ -36,6 +36,15 @@ Acceptance test: a small cropped output of a very tall synthetic image only requ
 
 Synthetic-source tests prove misleading for a real codec's granularity or the chosen first adapter exposes an unmodeled dependency class.
 
+## Experiment scope (2026-10-31)
+
+The first internal implementation is intentionally **Gray8-only**, uses a scalar pixel-center bilinear reference resize, and supports a single chain of `synthetic → crop → resize → sink` with optional additional crops/resizes. There is no public API or codec. A per-row planner and non-retaining sink callback avoid output-sized allocations; RAII-tracked input/output region buffers enforce a shared managed-pixel-memory ceiling.
+
+Tests include an independent eager resize oracle, chained resize + downstream crop, 100-million-row synthetic input without source materialization, severe vertical downscale without expanding intermediate row gaps, invalid geometry, memory pressure, sink cancellation, and atomic reservation safety. These test the architectural contract, **not** real decoder behavior or image quality across color spaces.
+
+The immediate next research question is whether codec adapters can expose region-granular decoded planes without breaking this ownership model. Before a public API or a stable region scheduler, test noncontiguous inputs, encoded output backpressure, format-native planes, and two consumers of a shared node.
+
 ## Amendment log
 
 - 2026-10-31 — Initial proposal.
+- 2026-10-31 — Added a bounded scalar vertical-slice experiment; unresolved contracts remain explicitly provisional.

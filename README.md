@@ -47,12 +47,12 @@ A graph node describes the image it produces, not an eagerly allocated pixel arr
 - [Architecture sketch](docs/architecture.md)
 - [Architecture Decision Records](docs/adr/README.md) — **living**, reviewable decisions with explicit status and reconsideration triggers
 - [Research hypotheses and codec capability checklist](docs/research/format-capabilities.md)
-- [First vertical slice](docs/roadmap.md)
+- [First vertical slice](docs/roadmap.md) and [its executable contract](docs/design/region-experiment.md)
 - [Contributor guide](CONTRIBUTING.md) and [agent guide](AGENTS.md)
 
 ## Development
 
-The repository contains a deliberately minimal compilable Rust library scaffold. No codec or processing feature is implemented yet.
+The repository contains an **internal, experimental** codec-free vertical slice: `synthetic source → crop → bilinear resize → borrowed scanline sink`. It exercises backward region planning and an explicit managed-pixel-buffer budget. No real codec, public processing API, SIMD implementation, or GPU backend exists yet.
 
 ```sh
 cargo fmt --all --check

@@ -1,6 +1,6 @@
 # ADR-0004: Make buffer ownership and memory budgets explicit
 
-- **Status:** Proposed
+- **Status:** Experimental
 - **Date:** 2026-10-31
 - **Last reviewed:** 2026-10-31
 - **Supersedes:** None
@@ -39,6 +39,15 @@ Instrument managed buffer allocations, copied bytes and peak live bytes. Run lar
 
 Allocator instrumentation reveals excessive borrowing/ownership overhead, or a targeted codec's memory requirements make the model misleading.
 
+## Experiment: synchronous ownership and budget (2026-10-31)
+
+The first executor holds at most its required input region and output region for a scalar transform. The crop operation changes the tile's logical coordinate origin **without copying bytes**. An output sink receives a borrowed row slice and cannot retain it through the callback's type. There is no forced destination image allocation inside the engine.
+
+An `Arc`-shared, atomically reserved byte budget tracks the **engine's owned pixel buffers**, using RAII to return reservations on success, cancellation, or allocation failure. The counter enforces a limit across concurrent holders and records a reservation high-water mark. Graph metadata, planner vectors, callback-owned data, allocator overhead and external codecs are **not** included; this is not a total process/RSS bound. Until these other allocations are explicitly modeled, claims must say *managed pixel-buffer budget*, not *strict engine memory limit*.
+
+**New tests:** allocation failure returns an error without leaked reservations, early sink cancellation releases buffers, and a shared budget prevents two simultaneous reservations from exceeding the limit.
+
 ## Amendment log
 
 - 2026-10-31 — Initial proposal.
+- 2026-10-31 — Added a bounded scalar vertical-slice experiment; unresolved contracts remain explicitly provisional.
