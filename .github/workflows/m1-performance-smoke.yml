@@ -1,0 +1,31 @@
+name: M1 Synthetic Performance Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/m1-performance-smoke.yml"
+      - "scripts/m1-performance-smoke.sh"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install AV1 assembler, libvips, and GNU time
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y nasm libvips-tools time
+      - name: Generate a fixed synthetic JPEG and measure end-to-end RSS/time
+        run: bash scripts/m1-performance-smoke.sh
+      - name: Attach smoke metrics and environment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-performance-smoke
+          path: |
+            target/m1-benchmark-smoke.csv
+            target/m1-benchmark-environment.txt
+          if-no-files-found: ignore

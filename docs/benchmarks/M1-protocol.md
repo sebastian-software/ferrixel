@@ -39,3 +39,9 @@ Collect multiple realistic images: small photos (hundreds of pixels), 12/24/48-M
 | Robustness/fuzz corpus | In progress |
 
 Do not mark M1 release-ready based only on a small set of passing unit tests.
+
+## CI synthetic feasibility comparison (not parity)
+
+The separate [M1 Synthetic Performance Smoke](../../.github/workflows/m1-performance-smoke.yml) generates a deterministic 1280×853 JPEG, transcodes it to 640×427 AVIF with Ferrixel, and tries an analogous `vipsthumbnail --linear` libvips operation. It records two wall-time/peak-RSS/output-size observations per backend and captures environment details in downloadable workflow artifacts.
+
+**Interpretation:** output `Q=80` is not equal fidelity between `ravif` and libvips' AV1 encoder; libvips may use a different filter, chroma mode and internal parallelism. Results prove a runnable tool and provide resource *smoke data*, not a speedup/quality claim. The mandatory fair Sharp/libvips corpus comparison, matching image quality through SSIMULACRA2/Butteraugli, remains an open M1-RC gate.
