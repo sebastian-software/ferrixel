@@ -8,7 +8,7 @@ Ferrixel itself is **MIT OR Apache-2.0** (see [ADR-0010](adr/0010-dual-licensing
 python3 scripts/audit-licenses.py
 ```
 
-The script invokes `cargo metadata --all-features`, traverses the resolved dependency graph and writes `target/m1-license-inventory.csv`. It fails closed when license metadata is absent, carries known strong/weak copyleft markers, or names a license not yet added to our provisional allowlist. This is a **metadata preflight, not a lawyer-reviewed dependency license audit**. `SPDX OR` grants a choice; metadata does not demonstrate how that choice must be documented or distributed.
+The script invokes `cargo metadata --all-features`, traverses the resolved dependency graph and writes `target/m1-license-inventory.csv`. Ordinary CI **blocks strong-copyleft metadata** and reports missing/unknown/weak-copyleft terms as `REVIEW` without pretending they are approved. A strict pre-release run (`python3 scripts/audit-licenses.py --strict`) fails if *any* review item remains. This is a **metadata preflight, not a lawyer-reviewed dependency license audit**. `SPDX OR` grants a choice; metadata does not demonstrate how that choice must be documented or distributed.
 
 When a crate is flagged, review its exact source license, license-file and notices, selected feature/dependency tree, patent terms, and bundled native code before allowing it. Do not expand the allowlist just to make CI green.
 
@@ -34,3 +34,9 @@ A future JPEG XL encoder, including the AGPL-3.0/commercial `jxl-encoder` candid
 - [ ] Perform an independent source and legal review of third-party license obligations.
 
 Do **not** declare M1 release-ready merely because the metadata gate passes.
+
+## Transitive review: `avif-parse` (MPL-2.0)
+
+The `avif-decode` dependency currently incorporates `avif-parse` version 2.1.0, which declares **MPL-2.0** (confirmed in its upstream `Cargo.toml` and source headers). MPL-2.0 is **file-level copyleft**, not equivalent to a permissive MIT/Apache grant. A separately linked, unmodified MPL crate may be usable alongside an MIT/Apache project, but distributions must still honor MPL notices and source-availability obligations for covered files and assess any modifications. This review item must not be silently added to the permissive allowlist. Until the source/NOTICE redistribution requirements are explicitly reviewed, the full-dependency license gate remains **open**, even if code CI is green.
+
+Reference: https://github.com/kornelski/avif-parse/blob/main/Cargo.toml

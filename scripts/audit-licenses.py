@@ -19,7 +19,8 @@ PERMISSIVE = {
     "CC0-1.0", "ISC", "MIT", "MIT-0", "Unlicense", "Unicode-3.0", "Zlib",
 }
 # Require explicit approval for copyleft or unusual source restrictions.
-RESTRICTED_PREFIX = ("GPL-", "AGPL-", "LGPL-", "SSPL-", "EUPL-", "MPL-")
+STRONG_COPYLEFT = ("GPL-", "AGPL-", "SSPL-")
+REVIEW_COPYLEFT = ("MPL-", "LGPL-", "EUPL-")
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9.\-+]*|0BSD")
 OPERATORS = {"AND", "OR", "WITH"}
 
@@ -33,8 +34,10 @@ def classify(expression: str | None) -> tuple[str, str]:
     licenses = [x for x in parts if x not in OPERATORS]
     if not licenses:
         return "REVIEW", "No recognizable SPDX identifiers"
-    if any(x.startswith(RESTRICTED_PREFIX) for x in licenses):
-        return "BLOCK", "Copyleft/restricted license requires manual decision"
+    if any(x.startswith(STRONG_COPYLEFT) for x in licenses):
+        return "BLOCK", "Strong copyleft requires an explicit integration decision"
+    if any(x.startswith(REVIEW_COPYLEFT) for x in licenses):
+        return "REVIEW", "Weak/copyleft license: assess notice, source and file-level obligations"
     not_approved = sorted(set(licenses) - PERMISSIVE)
     if not_approved:
         return "REVIEW", "Unrecognized or non-allowlisted terms: " + ", ".join(not_approved)
@@ -86,10 +89,12 @@ def main() -> int:
         for name, version, status, reason in unresolved:
             print(f"{status}: {name} {version}: {reason}", file=sys.stderr)
         print("Resolve licensing questions before a release candidate.", file=sys.stderr)
-        return 1
+        if "--strict" in sys.argv or any(row[2] == "BLOCK" for row in unresolved):
+            return 1
+    else:
+        print("All metadata expressions are in the provisional permissive allowlist.")
 
-    print("All metadata expressions are in the provisional permissive allowlist.")
-    print("This is NOT proof of license compliance; inspect source/NOTICES separately.")
+    print("Metadata screening is NOT proof of license compliance; review notices and source.")
     return 0
 
 
