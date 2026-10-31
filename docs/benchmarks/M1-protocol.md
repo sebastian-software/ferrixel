@@ -53,3 +53,17 @@ GitHub Actions [run 41234019887](https://github.com/sebastian-software/ferrixel/
 ## Sharp AVIF feasibility baseline
 
 The smoke workflow optionally installs a **pinned Sharp 0.34.5** only on the GitHub runner and records its `JPEG → Lanczos3 resize → AVIF` end-to-end wall time, peak process RSS and encoded file size. It has an independent embedded libvips/libheif build, which may provide AVIF even when the OS libvips package does not. Values are labeled `comparable_quality=no`: Sharp's `quality=80` does **not** represent the same compression/distortion as `ravif quality=80`, and Sharp's default transfer, resampler and threading behavior differs. The method is a **feasibility baseline only**. Do not infer performance leadership until output fidelity has been matched with independent decoders and a perceptual quality metric.
+
+## Sharp AVIF observations (smoke only)
+
+GitHub Actions [run 41235323253](https://github.com/sebastian-software/ferrixel/actions/runs/41235323253) extended the reproducible synthetic 1280×853 JPEG → 640×427 experiment to pinned **Sharp 0.34.5** with its own libvips binary. Two repeats on that run recorded:
+
+| Backend | Time (s) | Peak RSS (KiB) | Output (bytes) |
+| --- | ---: | ---: | ---: |
+| Ferrixel, AVIF (ravif) | 0.69, 0.69 | 24,916; 24,868 | 159,086 |
+| Sharp 0.34.5, AVIF | 0.11, 0.11 | 85,940; 85,732 | 254,757 |
+| OS libvips, PNG resize-only | 0.06, 0.06 | 62,428; 62,224 | 795,223 |
+
+Both AVIF paths used a nominal quality setting of 80 but **not an independently verified equivalent perceptual quality**, encoder speed, chroma mode, transfer curve, threading policy or output profile. In this run Sharp was faster, while Ferrixel's reported process RSS was lower; **neither observation establishes a quality-matched advantage**. The OS libvips package still could not encode AVIF, so that PNG result is not an AVIF competitor.
+
+The benchmark remains a runner-specific feasibility smoke. Its reference input is synthetic and cannot replace a real-image corpus or SSIMULACRA2/Butteraugli quality matching. Artifacts contain the CSV and environment for reproducibility.

@@ -35,3 +35,7 @@ The separate [M1 Decoder Fuzz Smoke](../.github/workflows/m1-fuzz-smoke.yml) ins
 ## Early input limits
 
 The experimental public facade now rejects compressed input exceeding a configurable byte cap (default **64 MiB**) before opening any decoder and rejects image dimensions above a configured **100-megapixel** default. The AVIF adapter additionally parses the AV1 primary-item sequence header and checks its maximum coded frame dimensions **before full-frame decode**. This mitigates common decompression-bomb cases; it does **not** bound memory used by the compressed AVIF parser, rav1d, JPEG XL or encoders. The preflight intentionally requires a second AVIF container parse and should eventually be folded into a retained decoder-header object so no work is repeated. Always retain process RSS and sandbox limits for hostile inputs.
+
+## First measured fuzz result
+
+[Workflow run 41235323267](https://github.com/sebastian-software/ferrixel/actions/runs/41235323267) completed 3,000 seeded/mutated invocations using cargo-fuzz 0.13.2 and a nightly compiler, without a reported crash. The final corpus was 141 inputs; the log's reported peak RSS was about 139 MiB. This is only a shallow smoke. Continuous fuzzing with longer duration, realistic large color profiles, AVIF grids/alpha and independent sanitizers is **still required** for a security-sensitive release.

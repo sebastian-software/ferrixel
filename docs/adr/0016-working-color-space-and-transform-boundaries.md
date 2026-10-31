@@ -69,3 +69,7 @@ A dependency-free scalar `src/working_color.rs` proof now decodes tagged sRGB or
 ## 2026-10-31: pipeline implementation, still under review
 
 PR #11 experimentally connects `ToLinearSrgb → WorkingLinear(Area/Lanczos3) → ToSrgb8` with real decoder rows and an explicit AVIF frame-materialization sink. The scalar reference preserves out-of-gamut intermediate colors and alpha association until final output quantization. A contract test uncovered **nonmonotonic minimum input indices at exact Lanczos zero crossings**, requiring the scanline cache to retain any row needed by *any remaining* output row. No general planner optimization, unlimited-memory guarantee, full orientation handling or arbitrary profile conversion is implied. The ADR stays **Proposed** pending independent quality and resource validation.
+
+### Region footprint correction
+
+Differential testing exposed that the minimum *nonzero* tap of Lanczos3 can move backward at exact sinc zero crossings. Besides delaying row-cache eviction, the region planner must take the union of **every output sample's** filter support, not assume that the first and last output points bound all interior taps. The current reference planner now does so. For large regions, the O(number of output positions) planning overhead is an explicit optimization opportunity; a future analytical conservative bound must prove it contains the reference tap union.
