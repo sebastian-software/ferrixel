@@ -4,6 +4,7 @@
 //! initial graph immutable after construction and makes cycles impossible.
 
 use crate::color::{AlphaMode, ImageSemantics};
+use crate::color_contract::LinearSrgbReadiness;
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
 use crate::surface::{ChannelLayout, ColorMetadata, PixelFormat};
@@ -174,7 +175,9 @@ impl Graph {
         if parent.semantics.alpha != expected_alpha {
             return Err(Error::UnsupportedAlphaMode);
         }
-        if !parent.semantics.color.is_unambiguous_srgb() {
+        if parent.semantics.color.linear_srgb_readiness()
+            != LinearSrgbReadiness::TransferReferenceReady
+        {
             return Err(Error::UnsupportedColorEncoding);
         }
         Ok(self.push(Node {

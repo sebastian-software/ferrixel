@@ -15,11 +15,10 @@ pub(crate) enum ColorEncoding {
 }
 
 impl ColorEncoding {
-    /// Only an unambiguous full-range, RGB-matrix sRGB CICP descriptor is
-    /// eligible for the first linear-light reference. ICC presence always
-    /// requires an explicit color-management step, even with matching CICP.
-    pub(crate) fn is_unambiguous_srgb(&self) -> bool {
-        matches!(self, Self::Cicp([1, 13, 0, 1]))
+    /// The planner owns color classification; a profile is never discarded
+    /// merely because a second CICP hint resembles sRGB.
+    pub(crate) fn linear_srgb_readiness(&self) -> crate::color_contract::LinearSrgbReadiness {
+        crate::color_contract::plan_to_linear_srgb(self)
     }
 
     pub(crate) fn from_metadata(icc: Option<&[u8]>, cicp: Option<[u8; 4]>) -> Self {

@@ -13,6 +13,7 @@
 
 mod codecs;
 mod color;
+mod color_contract;
 mod decoded_resize;
 mod decoder;
 mod error;
@@ -39,3 +40,6 @@ mod decoded_resize_tests;
 
 #[cfg(test)]
 mod linear_srgb_tests;
+
+#[cfg(test)]
+mod color_contract_tests;

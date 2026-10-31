@@ -1,6 +1,7 @@
 //! A private, capability-reporting boundary between graph planning and codecs.
 //! A requested ROI is NOT proof that the underlying codec avoided other work.
 use crate::color::{AlphaMode, ColorEncoding, ImageSemantics};
+use crate::color_contract::{ColorSignal, inspect_rendered_color};
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
 use crate::graph::{Graph, NodeId, NodeKind};
@@ -41,6 +42,12 @@ pub(crate) struct DecoderInfo {
     pub rendered_cicp: Option<[u8; 4]>,
 }
 impl DecoderInfo {
+    /// Inspect actual emitted samples' profile evidence without copying ICC
+    /// bytes; input-file tags must not be substituted after decoder conversion.
+    pub(crate) fn rendered_color_signal(&self) -> ColorSignal {
+        inspect_rendered_color(self.rendered_icc.as_deref(), self.rendered_cicp)
+    }
+
     pub(crate) fn semantics(&self) -> ImageSemantics {
         ImageSemantics {
             color: ColorEncoding::from_metadata(self.rendered_icc.as_deref(), self.rendered_cicp),
