@@ -24,6 +24,7 @@ mod linear_srgb;
 mod memory;
 mod plan;
 mod planar;
+mod quality;
 mod surface;
 mod working_color;
 
@@ -32,6 +33,9 @@ mod tests;
 
 #[cfg(test)]
 mod planar_tests;
+
+#[cfg(test)]
+mod quality_tests;
 
 #[cfg(test)]
 mod decoder_tests;
