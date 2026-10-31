@@ -27,3 +27,7 @@ The default CI also runs **deterministic malformed-header smoke tests** for trun
 - [ ] Recheck memory limits with actual process RSS, not just `MemoryBudget` snapshots.
 
 The existence of a fuzz target alone does not satisfy the M1 hardening acceptance criteria.
+
+## CI bounded smoke
+
+The separate [M1 Decoder Fuzz Smoke](../.github/workflows/m1-fuzz-smoke.yml) installs a pinned cargo-fuzz driver on a nightly Rust runner, seeds it with two checked-in real JPEG/JXL images, and runs **3,000 bounded attempts** with a 16 KiB maximum input and a 1 GiB process RSS cap. This is useful to catch shallow codec/protocol panics and integration bugs. It does **not** constitute a sustained, coverage-reviewed fuzz campaign and is not proof of process-wide memory safety; actual release acceptance still requires broader corpora, sanitizers and target-specific time budgets.
