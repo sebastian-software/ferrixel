@@ -94,21 +94,21 @@ impl DecodeSource for AvifSource {
                 Image::Rgb8(frame) => {
                     let pixels = &frame[row_index][left..left + width];
                     let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(3).zip(pixels) {
+                    for (dst, pixel) in scratch.as_mut_slice().as_chunks_mut::<3>().0.iter_mut().zip(pixels) {
                         dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b]);
                     }
                 }
                 Image::Rgba8(frame) => {
                     let pixels = &frame[row_index][left..left + width];
                     let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(4).zip(pixels) {
+                    for (dst, pixel) in scratch.as_mut_slice().as_chunks_mut::<4>().0.iter_mut().zip(pixels) {
                         dst.copy_from_slice(&[pixel.r, pixel.g, pixel.b, pixel.a]);
                     }
                 }
                 Image::Rgb16(frame) => {
                     let pixels = &frame[row_index][left..left + width];
                     let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(3).zip(pixels) {
+                    for (dst, pixel) in scratch.as_mut_slice().as_chunks_mut::<3>().0.iter_mut().zip(pixels) {
                         dst.copy_from_slice(&[
                             f32::from(pixel.r) / 65_535.0,
                             f32::from(pixel.g) / 65_535.0,
@@ -119,7 +119,7 @@ impl DecodeSource for AvifSource {
                 Image::Rgba16(frame) => {
                     let pixels = &frame[row_index][left..left + width];
                     let scratch = scratch_f32.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
-                    for (dst, pixel) in scratch.as_mut_slice().chunks_exact_mut(4).zip(pixels) {
+                    for (dst, pixel) in scratch.as_mut_slice().as_chunks_mut::<4>().0.iter_mut().zip(pixels) {
                         dst.copy_from_slice(&[
                             f32::from(pixel.r) / 65_535.0,
                             f32::from(pixel.g) / 65_535.0,

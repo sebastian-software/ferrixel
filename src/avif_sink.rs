@@ -66,7 +66,7 @@ impl AvifSink {
             .ok_or(Error::GeometryOverflow)?;
         for (pixel, sample) in self.pixels.as_mut_slice()[start..start + width]
             .iter_mut()
-            .zip(bytes.chunks_exact(4))
+            .zip(bytes.as_chunks::<4>().0.iter())
         {
             *pixel = ravif::RGBA8::new(sample[0], sample[1], sample[2], sample[3]);
         }

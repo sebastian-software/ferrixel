@@ -232,7 +232,7 @@ pub fn transcode(
     };
     if !matches!(
         actual.info().semantics().color,
-        ColorEncoding::Cicp([1, 13, 0, 1] | [12, 13, 0, 1])
+        ColorEncoding::Cicp([1 | 12, 13, 0, 1])
     ) {
         return Err(ProcessingError::new(
             "unsupported or ambiguous rendered color profile; a color-management transform is required",
