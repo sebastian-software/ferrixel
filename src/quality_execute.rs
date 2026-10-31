@@ -286,10 +286,7 @@ pub(crate) fn execute_quality_srgb8(
             sink(out_y, output.as_slice())?;
             output_rows += 1;
             let earliest_future = future_min_source[output_rows];
-            while cache
-                .front()
-                .is_some_and(|row| row.y < earliest_future)
-            {
+            while cache.front().is_some_and(|row| row.y < earliest_future) {
                 cache.pop_front();
             }
         }
