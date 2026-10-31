@@ -11,7 +11,7 @@
 - Golden tests for crop and one reference resize algorithm; no throughput claims.
 - A readable plan report showing actual work, materializations, peak engine-managed memory, and unsupported fast paths.
 
-**Progress (2026-10-31):** A scalar Gray8 synthetic → crop → bilinear resize → borrowed scanline sink implementation and differential/invariant tests exercise region planning and a managed pixel-buffer budget. The next review should validate this experiment against real codec APIs and explicitly document missing multi-input/plane/stride contracts before treating the stage as accepted architecture.
+**Progress (2026-10-31):** The scalar Gray8 synthetic → crop → bilinear resize → borrowed scanline sink implementation validates region planning and bounded managed pixel buffers. A subsequent [borrowed planar source probe](design/planar-surface-experiment.md) integrates 10-bit YUV 4:2:0 planes with byte strides, explicit color metadata and even-origin zero-copy crop forwarding. Neither experiment validates real decoder APIs or phase-aware/HDR resizing. The next review should test a real codec lifetime and output-format contract before treating the designs as accepted architecture.
 
 **Exit criterion:** a synthetic pipeline requests only necessary upstream regions and passes strict semantic/ownership tests without allocating full-frame intermediate images.
 

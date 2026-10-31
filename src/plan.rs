@@ -36,7 +36,7 @@ pub(crate) fn plan_region(
             region,
         });
         match node.kind {
-            NodeKind::Synthetic => break,
+            NodeKind::Synthetic | NodeKind::Planar10Source => break,
             NodeKind::Crop { input, rect } => {
                 region = region.translate(rect.x, rect.y)?;
                 current = input;

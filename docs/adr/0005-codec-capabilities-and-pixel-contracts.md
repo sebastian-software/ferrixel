@@ -4,7 +4,7 @@
 - **Date:** 2026-10-31
 - **Last reviewed:** 2026-10-31
 - **Supersedes:** None
-- **Related:** [0001](0001-project-thesis.md), [0002](0002-semantic-graph-and-planner.md), [0003](0003-demand-driven-regions.md)
+- **Related:** [0001](0001-project-thesis.md), [0002](0002-semantic-graph-and-planner.md), [0003](0003-demand-driven-regions.md), [0011](0011-borrowed-planar-surface-contract.md)
 
 ## Context
 
@@ -41,6 +41,10 @@ Treat layout negotiation as an **optimization under correctness constraints**. D
 
 For each adapter record decoder version/license/safety, output layout, region granularity, full-frame fallback, progressive quality semantics and opaque memory. Differential tests should include 8/10/12/16-bit inputs as supported, ICC/color profiles, chroma siting, alpha, HDR, rotations and cropped edges. No optimization is accepted solely because it is faster at visibly different quality.
 
+## Partial experiment (2026-10-31)
+
+[ADR-0011](0011-borrowed-planar-surface-contract.md) introduces borrowed, byte-strided YUV420P10 planes and explicit color metadata into a crop-only execution path. This validates one storage/lifetime contract, **not** generic codec capability negotiation, color conversion, or chroma-aware resampling. This broader ADR remains Proposed.
+
 ## Review when
 
 Real adapters require substantially different contracts or the model forces unnecessary color conversions in common modern-format workflows.
@@ -48,3 +52,4 @@ Real adapters require substantially different contracts or the model forces unne
 ## Amendment log
 
 - 2026-10-31 — Initial proposal.
+- 2026-10-31 — Linked the experimental planar-source probe; codec negotiation remains open.

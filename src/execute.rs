@@ -9,6 +9,7 @@ use crate::geometry::Rect;
 use crate::graph::{Graph, NodeId, NodeKind};
 use crate::memory::{ManagedBytes, MemoryBudget};
 use crate::plan::{Step, plan_region, sample_at};
+use crate::surface::PixelFormat;
 
 #[derive(Debug)]
 struct Tile {
@@ -54,6 +55,9 @@ pub(crate) fn execute(
     budget: &MemoryBudget,
     mut sink: impl FnMut(u32, &[u8]) -> Result<(), Error>,
 ) -> Result<Report, Error> {
+    if graph.node(target)?.format != PixelFormat::Gray8 {
+        return Err(Error::PixelFormatMismatch);
+    }
     if !output.fits(graph.node(target)?.size) {
         return Err(Error::OutOfBounds);
     }
@@ -109,6 +113,7 @@ fn execute_planned_region(
             report.full_frame_intermediates += 1;
         }
         let next = match node.kind {
+            NodeKind::Planar10Source => return Err(Error::PixelFormatMismatch),
             NodeKind::Synthetic => {
                 let mut tile = Tile::allocate(step.region, budget)?;
                 for (row, line) in tile

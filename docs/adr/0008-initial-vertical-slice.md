@@ -42,9 +42,10 @@ The first internal implementation is intentionally **Gray8-only**, uses a scalar
 
 Tests include an independent eager resize oracle, chained resize + downstream crop, 100-million-row synthetic input without source materialization, severe vertical downscale without expanding intermediate row gaps, invalid geometry, memory pressure, sink cancellation, and atomic reservation safety. These test the architectural contract, **not** real decoder behavior or image quality across color spaces.
 
-The immediate next research question is whether codec adapters can expose region-granular decoded planes without breaking this ownership model. Before a public API or a stable region scheduler, test noncontiguous inputs, encoded output backpressure, format-native planes, and two consumers of a shared node.
+The subsequent [planar-source experiment](0011-borrowed-planar-surface-contract.md) validates non-contiguous, byte-strided borrowed 10-bit YUV planes and even-origin crops without changing the Gray8 executor or granting any codec capability claims. Real decoder lifetime guarantees, encoded output backpressure, phase-aware crops/resizing, and multiple consumers of a shared node are still open.
 
 ## Amendment log
 
 - 2026-10-31 — Initial proposal.
 - 2026-10-31 — Added a bounded scalar vertical-slice experiment; unresolved contracts remain explicitly provisional.
+- 2026-10-31 — Cross-linked the borrowed planar-source experiment (ADR-0011).
