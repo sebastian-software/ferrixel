@@ -3,7 +3,7 @@
 use crate::error::Error;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Filter {
+pub enum Filter {
     Area,
     Lanczos3,
 }

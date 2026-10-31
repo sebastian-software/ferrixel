@@ -27,6 +27,8 @@ mod memory;
 mod plan;
 mod planar;
 mod quality;
+#[cfg(feature = "avif-write")]
+pub mod pipeline;
 mod quality_execute;
 mod surface;
 mod working_color;
