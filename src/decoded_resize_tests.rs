@@ -39,8 +39,12 @@ impl PatternSource {
                 layout,
                 access: DecodeAccess::CodecRegionRequest,
                 alpha: match layout {
-                    ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => AlphaMode::Unspecified,
-                    ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => AlphaMode::Opaque,
+                    ChannelLayout::GrayAlpha | ChannelLayout::Rgba | ChannelLayout::Cmyka => {
+                        AlphaMode::Unspecified
+                    }
+                    ChannelLayout::Gray | ChannelLayout::Rgb | ChannelLayout::Cmyk => {
+                        AlphaMode::Opaque
+                    }
                 },
                 rendered_icc: None,
                 rendered_cicp: None,

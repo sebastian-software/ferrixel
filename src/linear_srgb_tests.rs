@@ -27,16 +27,10 @@ struct RawSource {
     regions: Vec<Rect>,
 }
 impl RawSource {
-    fn new(
-        dimensions: Size,
-        layout: ChannelLayout,
-        alpha: AlphaMode,
-        pixels: Vec<u8>,
-    ) -> Self {
+    fn new(dimensions: Size, layout: ChannelLayout, alpha: AlphaMode, pixels: Vec<u8>) -> Self {
         assert_eq!(
             pixels.len(),
-            dimensions.width as usize * dimensions.height as usize
-                * usize::from(layout.channels())
+            dimensions.width as usize * dimensions.height as usize * usize::from(layout.channels())
         );
         Self {
             info: DecoderInfo {
@@ -55,7 +49,11 @@ impl RawSource {
 
     fn bind(&self, graph: &mut Graph) -> crate::graph::NodeId {
         graph
-            .decoded_source(self.info.size, self.info.pixel_format(), self.info.semantics())
+            .decoded_source(
+                self.info.size,
+                self.info.pixel_format(),
+                self.info.semantics(),
+            )
             .unwrap()
     }
 }
@@ -219,9 +217,7 @@ fn crops_and_vertical_interpolation_preserve_alpha_and_color_semantics() {
         size(2, 2),
         ChannelLayout::Rgba,
         AlphaMode::Straight,
-        vec![
-            0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0,
-        ],
+        vec![0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0],
     );
     let mut graph = Graph::new();
     let input = source.bind(&mut graph);
@@ -301,7 +297,12 @@ fn alpha_must_have_explicit_straight_association() {
             Err(Error::UnsupportedAlphaMode)
         );
     }
-    let source = RawSource::new(size(2, 1), ChannelLayout::Rgb, AlphaMode::Straight, vec![0; 6]);
+    let source = RawSource::new(
+        size(2, 1),
+        ChannelLayout::Rgb,
+        AlphaMode::Straight,
+        vec![0; 6],
+    );
     let mut graph = Graph::new();
     let input = source.bind(&mut graph);
     assert_eq!(

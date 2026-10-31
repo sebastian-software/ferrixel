@@ -1,7 +1,7 @@
 //! Read-only JPEG fallback: full output materialization is explicit.
 //! No JPEG encoder or JPEG-first core assumptions.
-use zune_jpeg::JpegDecoder;
 use crate::color::AlphaMode;
+use zune_jpeg::JpegDecoder;
 use zune_jpeg::zune_core::{bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions};
 
 use crate::decoder::{

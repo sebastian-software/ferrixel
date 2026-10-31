@@ -233,15 +233,23 @@ impl PreparedResize {
             let output_x = self.resize_region.x + column;
             let x = sample_at(output_x, self.input_size.width, self.resized_size.width);
             let lower = usize::try_from(
-                x.lower.checked_sub(self.input_footprint.x).ok_or(Error::OutOfBounds)?,
+                x.lower
+                    .checked_sub(self.input_footprint.x)
+                    .ok_or(Error::OutOfBounds)?,
             )
             .map_err(|_| Error::GeometryOverflow)?;
             let upper = usize::try_from(
-                x.upper.checked_sub(self.input_footprint.x).ok_or(Error::OutOfBounds)?,
+                x.upper
+                    .checked_sub(self.input_footprint.x)
+                    .ok_or(Error::OutOfBounds)?,
             )
             .map_err(|_| Error::GeometryOverflow)?;
-            let lower_offset = lower.checked_mul(self.channels).ok_or(Error::GeometryOverflow)?;
-            let upper_offset = upper.checked_mul(self.channels).ok_or(Error::GeometryOverflow)?;
+            let lower_offset = lower
+                .checked_mul(self.channels)
+                .ok_or(Error::GeometryOverflow)?;
+            let upper_offset = upper
+                .checked_mul(self.channels)
+                .ok_or(Error::GeometryOverflow)?;
             let encoded = crate::linear_srgb::bilinear(
                 top,
                 current_pixels,
