@@ -60,37 +60,20 @@ impl AvifSource {
     }
 }
 
-impl DecodeSource for AvifSource {
-    fn info(&self) -> &DecoderInfo {
-        &self.info
-    }
-
-    fn read_region(
-        &mut self,
-        region: Rect,
-        budget: &MemoryBudget,
-        sink: &mut dyn FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
-    ) -> Result<DecodeReport, Error> {
-        if !region.fits(self.info.size) {
-            return Err(Error::OutOfBounds);
-        }
-        let channels = usize::from(self.info.layout.channels());
-        let width = usize::try_from(region.width).map_err(|_| Error::GeometryOverflow)?;
-        let components = width.checked_mul(channels).ok_or(Error::GeometryOverflow)?;
-        let mut scratch_u8 = if self.info.sample == SampleType::U8 {
-            Some(budget.allocate(components)?)
-        } else {
-            None
-        };
-        let mut scratch_f32 = if self.info.sample == SampleType::F32 {
-            Some(budget.allocate_typed::<f32>(components)?)
-        } else {
-            None
-        };
+/// Convert the decoder-owned full frame into borrowed interleaved output
+/// rows. The temporary row buffers stay under Ferrixel's managed budget.
+fn emit_decoded_rows(
+    image: &Image,
+    region: Rect,
+    width: usize,
+    scratch_u8: &mut Option<crate::memory::ManagedBuffer<u8>>,
+    scratch_f32: &mut Option<crate::memory::ManagedBuffer<f32>>,
+    sink: &mut dyn FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
+) -> Result<(), Error> {
         let left = usize::try_from(region.x).map_err(|_| Error::GeometryOverflow)?;
         for y in region.y..region.bottom() {
             let row_index = usize::try_from(y).map_err(|_| Error::GeometryOverflow)?;
-            match &self.image {
+            match image {
                 Image::Rgb8(frame) => {
                     let pixels = &frame[row_index][left..left + width];
                     let scratch = scratch_u8.as_mut().ok_or(Error::UnsupportedCodecLayout)?;
@@ -162,6 +145,44 @@ impl DecodeSource for AvifSource {
                 return Err(Error::UnsupportedCodecLayout);
             }
         }
+    Ok(())
+}
+
+impl DecodeSource for AvifSource {
+    fn info(&self) -> &DecoderInfo {
+        &self.info
+    }
+
+    fn read_region(
+        &mut self,
+        region: Rect,
+        budget: &MemoryBudget,
+        sink: &mut dyn FnMut(u32, DecodedRow<'_>) -> Result<(), Error>,
+    ) -> Result<DecodeReport, Error> {
+        if !region.fits(self.info.size) {
+            return Err(Error::OutOfBounds);
+        }
+        let channels = usize::from(self.info.layout.channels());
+        let width = usize::try_from(region.width).map_err(|_| Error::GeometryOverflow)?;
+        let components = width.checked_mul(channels).ok_or(Error::GeometryOverflow)?;
+        let mut scratch_u8 = if self.info.sample == SampleType::U8 {
+            Some(budget.allocate(components)?)
+        } else {
+            None
+        };
+        let mut scratch_f32 = if self.info.sample == SampleType::F32 {
+            Some(budget.allocate_typed::<f32>(components)?)
+        } else {
+            None
+        };
+        emit_decoded_rows(
+            &self.image,
+            region,
+            width,
+            &mut scratch_u8,
+            &mut scratch_f32,
+            sink,
+        )?;
         Ok(DecodeReport {
             requested: region,
             access: DecodeAccess::FullFrameFallback,
