@@ -79,7 +79,10 @@ impl AvifSink {
         if self.next_y != self.size.height {
             return Err(Error::IncompleteOutput);
         }
-        let size = self.pixels.as_slice().len()
+        let size = self
+            .pixels
+            .as_slice()
+            .len()
             .checked_mul(std::mem::size_of::<ravif::RGBA8>())
             .ok_or(Error::GeometryOverflow)?;
         let image = ravif::Img::new(

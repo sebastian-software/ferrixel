@@ -18,7 +18,10 @@ struct RgbSource {
 }
 impl RgbSource {
     fn new(size: Size, layout: ChannelLayout, pixels: Vec<u8>) -> Self {
-        assert_eq!(pixels.len(), size.width as usize * size.height as usize * usize::from(layout.channels()));
+        assert_eq!(
+            pixels.len(),
+            size.width as usize * size.height as usize * usize::from(layout.channels())
+        );
         Self {
             info: DecoderInfo {
                 size,
@@ -39,7 +42,9 @@ impl RgbSource {
     }
 }
 impl DecodeSource for RgbSource {
-    fn info(&self) -> &DecoderInfo { &self.info }
+    fn info(&self) -> &DecoderInfo {
+        &self.info
+    }
     fn read_region(
         &mut self,
         region: Rect,
@@ -58,7 +63,9 @@ impl DecodeSource for RgbSource {
             requested: region,
             access: DecodeAccess::CodecRegionRequest,
             rows: u64::from(region.height),
-            output_sample_bytes: u64::from(region.width) * u64::from(region.height) * channel as u64,
+            output_sample_bytes: u64::from(region.width)
+                * u64::from(region.height)
+                * channel as u64,
             known_full_frame_buffers: 0,
             peak_engine_managed_bytes: 0,
             opaque_codec_memory_unbounded: false,
@@ -66,9 +73,19 @@ impl DecodeSource for RgbSource {
     }
 }
 
-fn make_graph(source: &RgbSource, output: Size, filter: Filter) -> (Graph, crate::graph::NodeId, crate::graph::NodeId) {
+fn make_graph(
+    source: &RgbSource,
+    output: Size,
+    filter: Filter,
+) -> (Graph, crate::graph::NodeId, crate::graph::NodeId) {
     let mut graph = Graph::new();
-    let id = graph.decoded_source(source.info.size, source.info.pixel_format(), source.info.semantics()).unwrap();
+    let id = graph
+        .decoded_source(
+            source.info.size,
+            source.info.pixel_format(),
+            source.info.semantics(),
+        )
+        .unwrap();
     let linear = graph.add_linear_srgb(id).unwrap();
     let resized = graph.resize_working(linear, output, filter).unwrap();
     let finished = graph.add_srgb8(resized).unwrap();
@@ -86,9 +103,18 @@ fn transparent_edges_are_filtered_after_linear_premultiplication() {
     let budget = MemoryBudget::new(128);
     let mut pixels = Vec::new();
     let report = execute_quality_srgb8(
-        &graph, output, id, &mut source, Rect::new(0, 0, 1, 1).unwrap(),
-        &budget, |_, line| { pixels.extend_from_slice(line); Ok(()) },
-    ).unwrap();
+        &graph,
+        output,
+        id,
+        &mut source,
+        Rect::new(0, 0, 1, 1).unwrap(),
+        &budget,
+        |_, line| {
+            pixels.extend_from_slice(line);
+            Ok(())
+        },
+    )
+    .unwrap();
     assert_eq!(pixels, [255, 0, 0, 128]);
     assert_eq!(source.calls, 1);
     assert_eq!(report.decoder_requests, 1);
@@ -105,14 +131,24 @@ fn area_downscale_black_white_checkerboard_is_linear_mid_gray() {
             rgb.extend([value; 3]);
         }
     }
-    let mut source = RgbSource::new(Size::new(4,4).unwrap(), ChannelLayout::Rgb, rgb);
-    let (graph,id,out) = make_graph(&source,Size::new(1,1).unwrap(),Filter::Area);
+    let mut source = RgbSource::new(Size::new(4, 4).unwrap(), ChannelLayout::Rgb, rgb);
+    let (graph, id, out) = make_graph(&source, Size::new(1, 1).unwrap(), Filter::Area);
     let budget = MemoryBudget::new(256);
     let mut result = Vec::new();
-    let report = execute_quality_srgb8(&graph,out,id,&mut source,Rect::new(0,0,1,1).unwrap(),&budget,|_,data|{
-        result.extend_from_slice(data);Ok(())
-    }).unwrap();
-    assert_eq!(result, [188,188,188,255]);
+    let report = execute_quality_srgb8(
+        &graph,
+        out,
+        id,
+        &mut source,
+        Rect::new(0, 0, 1, 1).unwrap(),
+        &budget,
+        |_, data| {
+            result.extend_from_slice(data);
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert_eq!(result, [188, 188, 188, 255]);
     assert_eq!(report.output_rows, 1);
     assert_eq!(source.calls, 1);
     assert_eq!(budget.snapshot().live, 0);
@@ -121,31 +157,57 @@ fn area_downscale_black_white_checkerboard_is_linear_mid_gray() {
 
 #[test]
 fn failure_and_sink_cancellation_release_cached_rows() {
-    let mut source=RgbSource::new(Size::new(3,3).unwrap(),ChannelLayout::Rgb,vec![200;27]);
-    let (graph,id,out)=make_graph(&source,Size::new(2,2).unwrap(),Filter::Lanczos3);
-    let small=MemoryBudget::new(5);
+    let mut source = RgbSource::new(Size::new(3, 3).unwrap(), ChannelLayout::Rgb, vec![200; 27]);
+    let (graph, id, out) = make_graph(&source, Size::new(2, 2).unwrap(), Filter::Lanczos3);
+    let small = MemoryBudget::new(5);
     assert!(matches!(
-        execute_quality_srgb8(&graph,out,id,&mut source,Rect::new(0,0,2,2).unwrap(),&small,|_,_|Ok(())),
-        Err(Error::BudgetExceeded{..})
+        execute_quality_srgb8(
+            &graph,
+            out,
+            id,
+            &mut source,
+            Rect::new(0, 0, 2, 2).unwrap(),
+            &small,
+            |_, _| Ok(())
+        ),
+        Err(Error::BudgetExceeded { .. })
     ));
-    assert_eq!(small.snapshot().live,0);
-    let big=MemoryBudget::new(2048);
-    let mut called=0;
+    assert_eq!(small.snapshot().live, 0);
+    let big = MemoryBudget::new(2048);
+    let mut called = 0;
     assert_eq!(
-        execute_quality_srgb8(&graph,out,id,&mut source,Rect::new(0,0,2,2).unwrap(),&big,|_,_|{
-            called+=1; Err(Error::Cancelled)
-        }),
+        execute_quality_srgb8(
+            &graph,
+            out,
+            id,
+            &mut source,
+            Rect::new(0, 0, 2, 2).unwrap(),
+            &big,
+            |_, _| {
+                called += 1;
+                Err(Error::Cancelled)
+            }
+        ),
         Err(Error::Cancelled)
     );
-    assert_eq!(called,1);
-    assert_eq!(big.snapshot().live,0);
+    assert_eq!(called, 1);
+    assert_eq!(big.snapshot().live, 0);
 }
 
 #[test]
 fn explicit_color_nodes_preserve_correct_metadata() {
-    let source=RgbSource::new(Size::new(4,4).unwrap(),ChannelLayout::Rgb,vec![80;48]);
-    let (graph,id,output)=make_graph(&source,Size::new(2,2).unwrap(),Filter::Lanczos3);
-    assert_eq!(graph.node(id).unwrap().semantics.color,crate::color::ColorEncoding::Cicp([1,13,0,1]));
-    assert_eq!(graph.node(output).unwrap().semantics.color,crate::color::ColorEncoding::Cicp([1,13,0,1]));
-    assert_ne!(graph.node(id).unwrap().size,graph.node(output).unwrap().size);
+    let source = RgbSource::new(Size::new(4, 4).unwrap(), ChannelLayout::Rgb, vec![80; 48]);
+    let (graph, id, output) = make_graph(&source, Size::new(2, 2).unwrap(), Filter::Lanczos3);
+    assert_eq!(
+        graph.node(id).unwrap().semantics.color,
+        crate::color::ColorEncoding::Cicp([1, 13, 0, 1])
+    );
+    assert_eq!(
+        graph.node(output).unwrap().semantics.color,
+        crate::color::ColorEncoding::Cicp([1, 13, 0, 1])
+    );
+    assert_ne!(
+        graph.node(id).unwrap().size,
+        graph.node(output).unwrap().size
+    );
 }

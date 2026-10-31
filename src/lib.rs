@@ -11,9 +11,9 @@
 // public API. Remove this allowance when the first supported API lands.
 #![cfg_attr(not(test), allow(dead_code))]
 
-mod codecs;
 #[cfg(feature = "avif-write")]
 mod avif_sink;
+mod codecs;
 mod color;
 mod color_contract;
 mod decoded_resize;

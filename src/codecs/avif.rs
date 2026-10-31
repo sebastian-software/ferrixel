@@ -70,7 +70,8 @@ impl DecodeSource for AvifSource {
         }
         let channels = usize::from(self.info.layout.channels());
         let width = usize::try_from(region.width).map_err(|_| Error::GeometryOverflow)?;
-        let mut scratch = budget.allocate(width.checked_mul(channels).ok_or(Error::GeometryOverflow)?)?;
+        let mut scratch =
+            budget.allocate(width.checked_mul(channels).ok_or(Error::GeometryOverflow)?)?;
         let left = usize::try_from(region.x).map_err(|_| Error::GeometryOverflow)?;
         for y in region.y..region.bottom() {
             let row_index = usize::try_from(y).map_err(|_| Error::GeometryOverflow)?;
@@ -95,8 +96,9 @@ impl DecodeSource for AvifSource {
             requested: region,
             access: DecodeAccess::FullFrameFallback,
             rows: u64::from(region.height),
-            output_sample_bytes: u64::from(region.width) *
-                u64::from(region.height) * channels as u64,
+            output_sample_bytes: u64::from(region.width)
+                * u64::from(region.height)
+                * channels as u64,
             known_full_frame_buffers: 1,
             peak_engine_managed_bytes: budget.snapshot().peak,
             opaque_codec_memory_unbounded: true,
