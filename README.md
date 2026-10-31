@@ -48,12 +48,13 @@ A graph node describes the image it produces, not an eagerly allocated pixel arr
 - [Architecture Decision Records](docs/adr/README.md) — **living**, reviewable decisions with explicit status and reconsideration triggers
 - [Research hypotheses and codec capability checklist](docs/research/format-capabilities.md)
 - [First vertical slice](docs/roadmap.md)
+- [Real decoded resize experiment](docs/design/decoded-resize-experiment.md) and [ADR-0013](docs/adr/0013-sample-domain-resize.md)
 - [Real decoder experiment](docs/design/real-decoder-experiment.md) and [codec candidate audit](docs/research/codec-adapter-audit.md), [the Gray8 experiment](docs/design/region-experiment.md), and [the borrowed planar experiment](docs/design/planar-surface-experiment.md)
 - [Contributor guide](CONTRIBUTING.md) and [agent guide](AGENTS.md)
 
 ## Development
 
-The repository contains **two internal, experimental, codec-free** slices: (1) `synthetic Gray8 source → crop → bilinear resize → borrowed scanline sink`, exercising backward region planning and bounded managed pixel buffers; (2) externally borrowed, byte-strided **10-bit YUV 4:2:0 planes → even-origin crop → borrowed scanline sink**, preserving color metadata without RGB conversion or pixel allocation. Chroma-phase-changing crops and planar resizing are deliberately not implemented. Read-only JPEG and JPEG XL have now been added as **optional, private experimental decoder adapters**, while encoder, supported public processing API, SIMD and GPU backends remain unimplemented. JPEG uses an explicit full-frame fallback; JPEG XL requests a codec-level ROI without claiming internal work savings.
+The repository contains **two internal, experimental, codec-free** slices: (1) `synthetic Gray8 source → crop → bilinear resize → borrowed scanline sink`, exercising backward region planning and bounded managed pixel buffers; (2) externally borrowed, byte-strided **10-bit YUV 4:2:0 planes → even-origin crop → borrowed scanline sink**, preserving color metadata without RGB conversion or pixel allocation. Chroma-phase-changing crops and planar resizing are deliberately not implemented. Read-only JPEG and JPEG XL are **optional, private experimental decoder adapters**, and a narrow **encoded-sample-domain bilinear resize** now exercises both. Decoder ICC/CICP and alpha-association metadata propagate through the graph; the resize is **not** color-managed, does not handle alpha, and must be explicitly selected. Encoder, supported public processing API, SIMD and GPU backends remain unimplemented. JPEG uses an explicit full-frame fallback; JPEG XL requests a codec-level ROI without claiming internal work savings.
 
 ```sh
 cargo fmt --all --check

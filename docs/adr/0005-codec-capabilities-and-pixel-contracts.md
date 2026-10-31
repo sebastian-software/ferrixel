@@ -53,3 +53,7 @@ Real adapters require substantially different contracts or the model forces unne
 
 - 2026-10-31 — Initial proposal.
 - 2026-10-31 — Linked the experimental planar-source probe; codec negotiation remains open.
+
+## 2026-10-31: experimental progress (not acceptance)
+
+[ADR-0013](0013-sample-domain-resize.md) now carries exact rendered ICC/CICP bytes and uncertain alpha status through graph nodes and tests a deliberately *encoded-sample-domain* bilinear resizer. These facts **do not** resolve ICC/CICP precedence, transfer-function linearization, HDR fidelity or premultiplied alpha. This ADR remains Proposed.

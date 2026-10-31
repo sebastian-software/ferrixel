@@ -41,7 +41,7 @@ pub(crate) fn plan_region(
                 region = region.translate(rect.x, rect.y)?;
                 current = input;
             }
-            NodeKind::Resize { input } => {
+            NodeKind::Resize { input, .. } => {
                 region = bilinear_footprint(region, graph.node(input)?.size, node.size)?;
                 current = input;
             }

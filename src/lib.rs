@@ -12,6 +12,8 @@
 #![cfg_attr(not(test), allow(dead_code))]
 
 mod codecs;
+mod color;
+mod decoded_resize;
 mod decoder;
 mod error;
 mod execute;
@@ -30,3 +32,6 @@ mod planar_tests;
 
 #[cfg(test)]
 mod decoder_tests;
+
+#[cfg(test)]
+mod decoded_resize_tests;

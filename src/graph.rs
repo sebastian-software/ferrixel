@@ -3,6 +3,7 @@
 //! Every new node may only refer to an already-existing node. This keeps the
 //! initial graph immutable after construction and makes cycles impossible.
 
+use crate::color::{AlphaMode, ImageSemantics};
 use crate::error::Error;
 use crate::geometry::{Rect, Size};
 use crate::surface::{ColorMetadata, PixelFormat};
@@ -20,17 +21,24 @@ pub(crate) enum NodeKind {
         input: NodeId,
         rect: Rect,
     },
-    /// Bilinear, pixel-center resize in Gray8 for the experiment only.
+    /// A reference scalar resize with an explicit sample-domain policy.
     Resize {
         input: NodeId,
+        domain: ResizeDomain,
     },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ResizeDomain {
+    EncodedSamples,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Node {
     pub kind: NodeKind,
     pub size: Size,
     pub format: PixelFormat,
+    pub semantics: ImageSemantics,
 }
 
 #[derive(Default)]
@@ -48,6 +56,7 @@ impl Graph {
             kind: NodeKind::Synthetic,
             size,
             format: PixelFormat::Gray8,
+            semantics: ImageSemantics::unspecified_opaque(),
         })
     }
 
@@ -58,6 +67,7 @@ impl Graph {
             kind: NodeKind::Planar10Source,
             size,
             format: PixelFormat::Yuv420P10(color),
+            semantics: ImageSemantics::unspecified_opaque(),
         })
     }
 
@@ -66,6 +76,7 @@ impl Graph {
         &mut self,
         size: Size,
         format: PixelFormat,
+        semantics: ImageSemantics,
     ) -> Result<NodeId, Error> {
         if !matches!(
             format,
@@ -77,6 +88,7 @@ impl Graph {
             kind: NodeKind::DecoderSource,
             size,
             format,
+            semantics,
         }))
     }
 
@@ -94,6 +106,7 @@ impl Graph {
             kind: NodeKind::Crop { input, rect },
             size: Size::new(rect.width, rect.height)?,
             format: parent.format,
+            semantics: parent.semantics.clone(),
         }))
     }
 
@@ -105,9 +118,32 @@ impl Graph {
             return Err(Error::UnsupportedPixelOperation);
         }
         Ok(self.push(Node {
-            kind: NodeKind::Resize { input },
+            kind: NodeKind::Resize {
+                input,
+                domain: ResizeDomain::EncodedSamples,
+            },
             size,
             format: parent.format,
+            semantics: parent.semantics.clone(),
+        }))
+    }
+
+    /// A bilinear sample-domain reference, not linear-light color management.
+    pub(crate) fn resize_encoded_samples(&mut self, input: NodeId, size: Size) -> Result<NodeId, Error> {
+        let parent = self.node(input)?;
+        if !matches!(parent.format, PixelFormat::InterleavedU8(1 | 3) | PixelFormat::InterleavedF32(1 | 3))
+            || parent.semantics.alpha != AlphaMode::Opaque
+        {
+            return Err(Error::UnsupportedPixelOperation);
+        }
+        Ok(self.push(Node {
+            kind: NodeKind::Resize {
+                input,
+                domain: ResizeDomain::EncodedSamples,
+            },
+            size,
+            format: parent.format,
+            semantics: parent.semantics.clone(),
         }))
     }
 
