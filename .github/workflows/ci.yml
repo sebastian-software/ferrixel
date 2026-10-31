@@ -12,6 +12,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Install AV1 assembler for optional rav1d backend
+        run: sudo apt-get update -qq && sudo apt-get install -y nasm
       - name: Format
         run: cargo fmt --all --check
       - name: Test core without codecs
