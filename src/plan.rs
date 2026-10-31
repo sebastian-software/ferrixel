@@ -62,8 +62,7 @@ pub(crate) struct Sample {
 
 pub(crate) fn sample_at(output: u32, input_len: u32, output_len: u32) -> Sample {
     debug_assert!(input_len > 0 && output_len > 0 && output < output_len);
-    let mapped = (f64::from(output) + 0.5) * f64::from(input_len) / f64::from(output_len)
-        - 0.5;
+    let mapped = (f64::from(output) + 0.5) * f64::from(input_len) / f64::from(output_len) - 0.5;
     let lower = mapped.floor();
     let upper = lower + 1.0;
     let max_index = f64::from(input_len - 1);

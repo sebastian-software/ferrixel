@@ -27,8 +27,8 @@ impl Tile {
     fn get(&self, x: u32, y: u32) -> u8 {
         debug_assert!(x >= self.rect.x && x < self.rect.right());
         debug_assert!(y >= self.rect.y && y < self.rect.bottom());
-        let offset = (y - self.rect.y) as usize * self.rect.width as usize
-            + (x - self.rect.x) as usize;
+        let offset =
+            (y - self.rect.y) as usize * self.rect.width as usize + (x - self.rect.x) as usize;
         self.pixels.as_slice()[offset]
     }
 }
@@ -78,7 +78,8 @@ pub(crate) fn execute(
             // Count nonterminal whole-image transform allocations, not input or sink data.
             if matches!(node.kind, NodeKind::Resize { .. })
                 && step.node != target
-                && step.region.x == 0 && step.region.y == 0
+                && step.region.x == 0
+                && step.region.y == 0
                 && step.region.width == node.size.width
                 && step.region.height == node.size.height
             {
@@ -100,7 +101,8 @@ pub(crate) fn execute(
                             );
                         }
                     }
-                    report.synthetic_pixels += u64::from(step.region.width) * u64::from(step.region.height);
+                    report.synthetic_pixels +=
+                        u64::from(step.region.width) * u64::from(step.region.height);
                     tile
                 }
                 NodeKind::Crop { .. } => {

@@ -207,7 +207,10 @@ fn cancellation_from_sink_releases_buffers() {
 fn bounds_are_checked_before_execution_or_allocation() {
     let mut graph = Graph::new();
     let source = graph.synthetic(size(10, 10));
-    assert_eq!(graph.crop(source, rect(7, 7, 4, 4)), Err(Error::OutOfBounds));
+    assert_eq!(
+        graph.crop(source, rect(7, 7, 4, 4)),
+        Err(Error::OutOfBounds)
+    );
     assert_eq!(Size::new(0, 1), Err(Error::InvalidDimensions));
     assert_eq!(Rect::new(u32::MAX, 0, 2, 1), Err(Error::GeometryOverflow));
     let budget = MemoryBudget::new(100);
@@ -229,7 +232,10 @@ fn shared_budget_prevents_concurrent_overcommit() {
         other_budget.allocate(40).err()
     });
     barrier.wait();
-    assert!(matches!(thread.join().unwrap(), Some(Error::BudgetExceeded { .. })));
+    assert!(matches!(
+        thread.join().unwrap(),
+        Some(Error::BudgetExceeded { .. })
+    ));
     assert_eq!(budget.snapshot().live, 40);
     drop(held);
     assert_eq!(budget.snapshot().live, 0);

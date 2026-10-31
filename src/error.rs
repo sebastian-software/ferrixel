@@ -9,10 +9,7 @@ pub(crate) enum Error {
     OutOfBounds,
     UnknownNode,
     AllocationFailed,
-    BudgetExceeded {
-        requested: usize,
-        available: usize,
-    },
+    BudgetExceeded { requested: usize, available: usize },
     Cancelled,
 }
 

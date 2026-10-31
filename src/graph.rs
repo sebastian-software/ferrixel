@@ -13,9 +13,14 @@ pub(crate) struct NodeId(pub(crate) usize);
 pub(crate) enum NodeKind {
     /// Deterministic, coordinate-addressable synthetic source.
     Synthetic,
-    Crop { input: NodeId, rect: Rect },
+    Crop {
+        input: NodeId,
+        rect: Rect,
+    },
     /// Bilinear, pixel-center resize in Gray8 for the experiment only.
-    Resize { input: NodeId },
+    Resize {
+        input: NodeId,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
