@@ -15,6 +15,8 @@
 mod avif_sink;
 mod codecs;
 mod color;
+#[cfg(feature = "icc")]
+mod cms;
 mod color_contract;
 mod decoded_resize;
 mod decoder;
